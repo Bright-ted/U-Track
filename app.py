@@ -30,14 +30,18 @@ app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
 @app.context_processor
 def inject_user():
     """Make current_user available in all templates"""
-    user_info = {}
-    if 'user_id' in session:
-        user_info['id'] = session['user_id']
-        user_info['role'] = session.get('role')
-        user_info['full_name'] = session.get('full_name', 'User')
-        user_info['email'] = session.get('email', '')
-        user_info['index_number'] = session.get('index_number')
-    return dict(current_user=user_info)
+    from flask import g
+    if not hasattr(g, 'current_user'):
+        g.current_user = {}
+        if 'user_id' in session:
+            user_info = {}
+            user_info['id'] = session['user_id']
+            user_info['role'] = session.get('role')
+            user_info['full_name'] = session.get('full_name', 'User')
+            user_info['email'] = session.get('email', '')
+            user_info['index_number'] = session.get('index_number')
+            g.current_user = user_info
+    return dict(current_user=g.current_user)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -898,7 +902,8 @@ def start_session(course_id):
     
     # FIX: Try both formats to see what works with your database
     # Option 1: Time only (HH:MM:SS)
-    time_only = now.strftime('%H:%M:%S')
+    # Use time without timezone
+    time_only = now.time().isoformat()[:8]  # Gets HH:MM:SS
     
     # Option 2: Full timestamp
     timestamp = now.isoformat()
