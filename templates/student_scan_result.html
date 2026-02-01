@@ -1,0 +1,19 @@
+{% extends "base_student.html" %}
+
+{% block content %}
+
+{% if success %}
+    <h3>Attendance marked successfully</h3>
+    <button disabled>
+        Scan Completed
+    </button>
+{% else %}
+    <h3>Scan failed</h3>
+    <a href="/student/scan">
+        Try again
+    </a>
+{% endif %}
+
+{% endblock %}
+
+

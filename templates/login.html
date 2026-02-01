@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Login | U-Track</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #003366 0%, #004080 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        /* Left Side - Login Form */
+        .form-section {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .form-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-logo-icon {
+            font-size: 2.5rem;
+            color: #003366;
+        }
+
+        .form-header h1 {
+            font-size: 2rem;
+            color: #003366;
+            margin-bottom: 10px;
+        }
+
+        .form-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .login-form {
+            width: 100%;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        .input-with-icon input {
+            width: 100%;
+            padding: 15px 15px 15px 50px;
+            border: 2px solid #eaeaea;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .input-with-icon input:focus {
+            outline: none;
+            border-color: #003366;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+        }
+
+        .form-options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+        }
+
+        .forgot-password {
+            color: #003366;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #003366 0%, #004080 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 51, 102, 0.4);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .form-footer p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .btn-register {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 30px;
+            background: #FFCC00;
+            color: #003366;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            background: #E6B800;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            color: #003366;
+        }
+
+        /* Right Side - Info Section */
+        .info-section {
+            background: linear-gradient(135deg, #003366 0%, #002244 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .info-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,204,0,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+        }
+
+        .info-content h2 {
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            line-height: 1.4;
+            color: #FFCC00;
+        }
+
+        .lecturer-features {
+            margin: 30px 0;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateX(10px);
+            background: rgba(255,255,255,0.15);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 204, 0, 0.2);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #FFCC00;
+        }
+
+        .feature-text h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+            color: white;
+        }
+
+        .feature-text p {
+            color: #bbdefb;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        .attendance-policy {
+            background: rgba(255, 204, 0, 0.1);
+            border-left: 4px solid #FFCC00;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .attendance-policy h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #FFCC00;
+        }
+
+        .attendance-policy p {
+            color: #FFCC00;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Error Message */
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            
+            .form-section {
+                padding: 40px 20px;
+            }
+            
+            .info-section {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Left Side - Login Form -->
+        <div class="form-section">
+            <div class="form-header">
+                <div class="form-logo">
+                    <div class="form-logo-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                </div>
+                <h1>Lecturer Login</h1>
+                <p>Access your faculty portal</p>
+            </div>
+
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="login-form">
+                <div class="form-group">
+                    <label for="identifier">Email Address</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="text" id="identifier" name="identifier" 
+                               placeholder="Enter your staff email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" 
+                               placeholder="Enter your password" required>
+                    </div>
+                </div>
+
+                <div class="form-options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember me</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login to Faculty Portal
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <p>Don't have a lecturer account?</p>
+                <a href="/register" class="btn-register">
+                    <i class="fas fa-user-plus"></i>
+                    Register as Lecturer
+                </a>
+                <br>
+                <a href="/" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Role Selection
+                </a>
+            </div>
+        </div>
+
+        <!-- Right Side - Information -->
+        <div class="info-section">
+            <div class="info-content">
+                <h2>U-Track Faculty Portal</h2>
+                
+                <div class="lecturer-features">
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4>Dynamic QR Attendance</h4>
+                            <p>Generate secure, time-sensitive QR codes for each class session</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4>Real-time Monitoring</h4>
+                            <p>Watch attendance fill up in real-time as students scan QR codes</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4>Automatic Flagging</h4>
+                            <p>System automatically flags students with 3+ absences</p>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4>Automated Reports</h4>
+                            <p>Generate attendance reports for examination eligibility</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="attendance-policy">
+                    <h4>
+                        <i class="fas fa-info-circle"></i>
+                        Faculty Responsibilities
+                    </h4>
+                    <p>
+                        <strong>Important:</strong> As a lecturer, you are responsible for:
+                    </p>
+                    <ul style="margin-left: 20px; margin-top: 10px;">
+                        <li>Starting attendance sessions 5 minutes before class</li>
+                        <li>Monitoring flagged students (3+ absences)</li>
+                        <li>Providing accurate attendance data for examinations</li>
+                        <li>Reporting technical issues promptly</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Form validation
+        document.querySelector('.login-form').addEventListener('submit', function(e) {
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!identifier || !password) {
+                e.preventDefault();
+                alert('Please fill in all required fields');
+                return false;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('.btn-login');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+            submitBtn.disabled = true;
+            
+            // Re-enable after 3 seconds if still on page
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

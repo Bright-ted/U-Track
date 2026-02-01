@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Live Attendance QR</title>
+</head>
+<body>
+    <h2>Scan This QR Code</h2>
+
+    <img
+        src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data={{ qr_payload }}"
+        alt="QR Code"
+    >
+
+    <p>This QR expires when the session ends.</p>
+</body>
+</html>

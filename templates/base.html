@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - U-Track</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #003366;
+            --dark-blue: #002244;
+            --accent-blue: #4d88ff;
+            --light-blue: #e6f0ff;
+            --sidebar-width: 260px;
+            --transition-speed: 0.3s;
+            --shadow-sm: 0 2px 8px rgba(0, 35, 68, 0.08);
+            --shadow-md: 0 4px 16px rgba(0, 35, 68, 0.12);
+            --shadow-lg: 0 8px 32px rgba(0, 35, 68, 0.16);
+            --border-radius: 12px;
+            --border-radius-sm: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            display: flex;
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Modern Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+            position: sticky;
+            top: 0;
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            transition: width var(--transition-speed);
+        }
+
+        .sidebar-header {
+            padding: 28px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #ffffff, #e6f0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header i {
+            font-size: 28px;
+            color: var(--accent-blue);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+
+        .nav-links {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            padding: 16px 24px;
+            margin: 0 8px;
+            border-radius: var(--border-radius-sm);
+            transition: all var(--transition-speed);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            padding-left: 28px;
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: rgba(77, 136, 255, 0.15);
+            color: white;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .nav-item::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--accent-blue);
+            transform: translateX(-100%);
+            transition: transform var(--transition-speed);
+        }
+
+        .nav-item:hover::after {
+            transform: translateX(0);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            padding: 14px 20px;
+            border-radius: var(--border-radius-sm);
+            transition: all var(--transition-speed);
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Area */
+        .content {
+            flex: 1;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            padding: 24px 32px;
+            background: white;
+            box-shadow: var(--shadow-sm);
+            position: sticky;
+            top: 0;
+            z-index: 90;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--dark-blue);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: var(--accent-blue);
+            border-radius: 2px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 20px;
+            background: var(--light-blue);
+            border-radius: var(--border-radius);
+            font-weight: 500;
+        }
+
+        .user-info i {
+            color: var(--primary-blue);
+            font-size: 20px;
+        }
+
+        .main-content {
+            padding: 32px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 80px;
+            }
+            
+            .sidebar-header h2, 
+            .nav-item span,
+            .logout-btn span {
+                display: none;
+            }
+            
+            .sidebar-header {
+                justify-content: center;
+                padding: 20px;
+            }
+            
+            .nav-item {
+                justify-content: center;
+                padding: 18px 0;
+                margin: 0 4px;
+            }
+            
+            .nav-item:hover {
+                padding-left: 0;
+                transform: scale(1.05);
+            }
+            
+            .sidebar-footer {
+                padding: 20px 0;
+            }
+            
+            .logout-btn {
+                justify-content: center;
+                padding: 14px 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+                position: relative;
+            }
+            
+            .sidebar-nav {
+                display: flex;
+                overflow-x: auto;
+                padding: 10px;
+            }
+            
+            .nav-links {
+                display: flex;
+                padding: 0;
+            }
+            
+            .nav-item {
+                flex-direction: column;
+                padding: 12px 16px;
+                min-width: 80px;
+                text-align: center;
+            }
+            
+            .nav-item span {
+                font-size: 12px;
+                display: block;
+            }
+            
+            .sidebar-footer {
+                display: none;
+            }
+            
+            .top-bar {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .main-content > * {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 51, 102, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 51, 102, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 51, 102, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-chalkboard-teacher"></i>
+        <h2>U-Track</h2>
+    </div>
+    
+    <div class="nav-links">
+        <a href="/lecturer/dashboard" class="nav-item {% if request.endpoint == 'lecturer_dashboard' %}active{% endif %}">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="/lecturer/courses" class="nav-item {% if request.endpoint == 'lecturer_courses' %}active{% endif %}">
+            <i class="fas fa-book-open"></i>
+            <span>Courses</span>
+        </a>
+        <a href="/lecturer/students" class="nav-item {% if request.endpoint == 'lecturer_students' %}active{% endif %}">
+            <i class="fas fa-users"></i>
+            <span>Students</span>
+        </a>
+        <a href="/lecturer/chat" class="nav-item {% if request.endpoint == 'lecturer_chat' %}active{% endif %}">
+            <i class="fas fa-comments"></i>
+            <span>Chat</span>
+        </a>
+    </div>
+    
+    <div class="sidebar-footer">
+        <a href="/logout" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="top-bar">
+        <div class="page-title">
+            {% block header %}{% endblock %}
+        </div>
+        
+        {% if current_user and current_user.is_authenticated %}
+        <div class="user-info">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ current_user.full_name }} ({{ current_user.role|title }})</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="main-content">
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<script>
+    // Add active state based on current URL
+    document.addEventListener('DOMContentLoaded', function() {
+        const navItems = document.querySelectorAll('.nav-item');
+        const currentPath = window.location.pathname;
+        
+        navItems.forEach(item => {
+            const href = item.getAttribute('href');
+            if (currentPath === href || 
+                (href !== '/' && currentPath.startsWith(href) && href !== '/lecturer/dashboard')) {
+                item.classList.add('active');
+            }
+        });
+        
+        // Add smooth hover effects
+        navItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateX(8px)';
+            });
+            
+            item.addEventListener('mouseleave', function() {
+                if (!this.classList.contains('active')) {
+                    this.style.transform = 'translateX(0)';
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+</html>

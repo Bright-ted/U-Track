@@ -1,0 +1,408 @@
+{% extends "base_student.html" %}
+
+{% block title %}My Registered Courses{% endblock %}
+{% block page_title %}My Registered Courses{% endblock %}
+{% block page_subtitle %}Manage your course registrations{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-book-open text-primary"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ registered_courses|length }}</h3>
+                    <p>Total Courses</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-calendar-alt text-success"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ registered_courses|selectattr('courses.academic_year', 'equalto', '2024/2025')|list|length }}</h3>
+                    <p>Current Year</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-user-graduate text-warning"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>
+                        {% set unique_lecturers = [] %}
+                        {% for reg in registered_courses %}
+                            {% if reg.courses.lecturers and reg.courses.lecturers.users %}
+                                {% set lecturer_name = reg.courses.lecturers.users.full_name %}
+                                {% if lecturer_name not in unique_lecturers %}
+                                    {% set _ = unique_lecturers.append(lecturer_name) %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ unique_lecturers|length }}
+                    </h3>
+                    <p>Lecturers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-clock text-info"></i>
+                </div>
+                <div class="stats-content">
+                    <h3>
+                        {% if registered_courses %}
+                            {{ registered_courses|sort(attribute='registered_at')|first|attr('registered_at')|datetimeformat if registered_courses|sort(attribute='registered_at')|first|attr('registered_at') else 'N/A' }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h3>
+                    <p>First Registration</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Grid -->
+    {% if registered_courses %}
+    <div class="row">
+        {% for reg in registered_courses %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card course-card">
+                <div class="course-card-header">
+                    <div class="course-code">
+                        <i class="fas fa-hashtag"></i>
+                        <span>{{ reg.courses.course_code }}</span>
+                    </div>
+                    <div class="course-actions">
+                        <form method="post" 
+                              action="/student/unregister-course/{{ reg.id }}" 
+                              onsubmit="return confirmUnregister('{{ reg.courses.course_code }}')">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash-alt"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="course-card-body">
+                    <h4 class="course-title">
+                        <i class="fas fa-book mr-2"></i>
+                        {{ reg.courses.course_title }}
+                    </h4>
+                    
+                    <div class="course-details">
+                        <div class="detail-item">
+                            <i class="fas fa-calendar"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Academic Year</span>
+                                <span class="detail-value">{{ reg.courses.academic_year }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-layer-group"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Semester</span>
+                                <span class="detail-value">Semester {{ reg.courses.semester }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Lecturer</span>
+                                <span class="detail-value">
+                                    {% if reg.courses.lecturers and reg.courses.lecturers.users %}
+                                        {{ reg.courses.lecturers.users.full_name }}
+                                    {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Registered On</span>
+                                <span class="detail-value registered-date">
+    {% if reg.registered_at %}
+        {{ reg.registered_at|datetimeformat('medium') }}
+    {% else %}
+        Unknown
+    {% endif %}
+</span>
+
+<h3>
+    {% if registered_courses %}
+        {{ registered_courses|sort(attribute='registered_at')|first|attr('registered_at')|datetimeformat('short') if registered_courses|sort(attribute='registered_at')|first|attr('registered_at') else 'N/A' }}
+    {% else %}
+        N/A
+    {% endif %}
+</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="course-card-footer">
+                    <a href="/student/scan" class="btn btn-success btn-block mb-2">
+                        <i class="fas fa-qrcode"></i> Scan Attendance
+                    </a>
+                    <a href="/student/attendance?course={{ reg.courses.id }}" class="btn btn-info btn-block">
+                        <i class="fas fa-chart-bar"></i> View History
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card empty-state-card">
+        <div class="empty-state-content">
+            <div class="empty-state-icon">
+                <i class="fas fa-book-open fa-4x"></i>
+            </div>
+            <h3>No Courses Registered</h3>
+            <p class="text-muted">You haven't registered for any courses yet.</p>
+            <div class="empty-state-actions">
+                <a href="/student/browse-courses" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Browse Available Courses
+                </a>
+                <a href="/student/dashboard" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .container-fluid {
+        padding: 0;
+    }
+    
+    .stats-card {
+        text-align: center;
+        padding: 25px;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stats-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        opacity: 0.8;
+    }
+    
+    .stats-content h3 {
+        margin: 0;
+        font-size: 2rem;
+        color: #333;
+    }
+    
+    .stats-content p {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .course-card {
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .course-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .course-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 20px 0 20px;
+        margin-bottom: 15px;
+    }
+    
+    .course-code {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .course-card-body {
+        padding: 0 20px;
+        flex-grow: 1;
+    }
+    
+    .course-title {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .course-details {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eaeaea;
+    }
+    
+    .detail-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .detail-item i {
+        width: 30px;
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+    
+    .detail-content {
+        flex: 1;
+    }
+    
+    .detail-label {
+        display: block;
+        color: #666;
+        font-size: 0.85rem;
+        margin-bottom: 3px;
+    }
+    
+    .detail-value {
+        display: block;
+        color: #333;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .course-card-footer {
+        padding: 20px;
+        border-top: 1px solid #eaeaea;
+        margin-top: auto;
+    }
+    
+    .btn-block {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .btn-block:last-child {
+        margin-bottom: 0;
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+    
+    .empty-state-card {
+        text-align: center;
+        padding: 60px 40px;
+        border: 2px dashed #dee2e6;
+        background: #f8f9fa;
+    }
+    
+    .empty-state-icon {
+        color: #adb5bd;
+        margin-bottom: 25px;
+    }
+    
+    .empty-state-card h3 {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .mr-2 {
+        margin-right: 8px;
+    }
+    
+    .mb-2 {
+        margin-bottom: 10px;
+    }
+    
+    .mb-4 {
+        margin-bottom: 30px;
+    }
+    
+    .text-primary { color: #667eea !important; }
+    .text-success { color: #42b883 !important; }
+    .text-warning { color: #ffa726 !important; }
+    .text-info { color: #29b6f6 !important; }
+    .text-muted { color: #6c757d !important; }
+</style>
+
+<script>
+    function confirmUnregister(courseCode) {
+        return confirm(`Are you sure you want to unregister from ${courseCode}?\n\nThis action cannot be undone.`);
+    }
+    
+    // Format dates on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const dateElements = document.querySelectorAll('.registered-date');
+        dateElements.forEach(el => {
+            const text = el.textContent.trim();
+            if (text && text !== 'Unknown') {
+                try {
+                    const date = new Date(text);
+                    if (!isNaN(date)) {
+                        el.textContent = date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                    }
+                } catch (e) {
+                    console.log('Date formatting error:', e);
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="session-settings-container">
+    <!-- Header -->
+    <div class="settings-header">
+        <h2>
+            <i class="fas fa-cogs"></i> Session Settings - {{ course.course_code }}
+        </h2>
+        <div class="breadcrumb">
+            <a href="/lecturer/courses">Courses</a> &gt;
+            <a href="/lecturer/courses/{{ course.id }}/sessions">Sessions</a> &gt;
+            <span>Settings</span>
+        </div>
+    </div>
+
+    <!-- Settings Form -->
+    <div class="settings-card">
+        <form method="POST" action="/lecturer/courses/{{ course.id }}/session-settings">
+            <!-- Session Duration -->
+            <div class="setting-group">
+                <h3><i class="fas fa-clock"></i> Session Duration</h3>
+                <div class="setting-description">
+                    <p>Set how long sessions should last before automatically ending.</p>
+                </div>
+                <div class="form-group">
+                    <label for="session_duration">
+                        <i class="fas fa-hourglass-half"></i> Maximum Session Duration (minutes)
+                    </label>
+                    <input type="number" 
+                           id="session_duration" 
+                           name="session_duration"
+                           class="form-control"
+                           value="{{ settings.session_duration_minutes }}"
+                           min="15" 
+                           max="360"
+                           step="15">
+                    <small class="form-text text-muted">
+                        Recommended: 60-180 minutes. Sessions will auto-end after this time.
+                    </small>
+                </div>
+            </div>
+
+            <!-- Auto-End Settings -->
+            <div class="setting-group">
+                <h3><i class="fas fa-robot"></i> Automatic Session Management</h3>
+                <div class="setting-description">
+                    <p>Configure automatic behavior for session management.</p>
+                </div>
+                
+                <div class="form-check mb-3">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           id="auto_end" 
+                           name="auto_end"
+                           {{ 'checked' if settings.auto_end }}>
+                    <label class="form-check-label" for="auto_end">
+                        <strong>Auto-end expired sessions</strong>
+                    </label>
+                    <small class="form-text text-muted d-block">
+                        Sessions will automatically end when they exceed the maximum duration.
+                        This prevents sessions from running indefinitely.
+                    </small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input type="checkbox" 
+                           class="form-check-input" 
+                           id="allow_late_entry" 
+                           name="allow_late_entry"
+                           {{ 'checked' if settings.allow_late_entry }}>
+                    <label class="form-check-label" for="allow_late_entry">
+                        <strong>Allow late entries</strong>
+                    </label>
+                    <small class="form-text text-muted d-block">
+                        Students can mark attendance even if they arrive late to class.
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label for="late_entry_minutes">
+                        <i class="fas fa-running"></i> Late Entry Grace Period (minutes)
+                    </label>
+                    <input type="number" 
+                           id="late_entry_minutes" 
+                           name="late_entry_minutes"
+                           class="form-control"
+                           value="{{ settings.late_entry_minutes }}"
+                           min="0" 
+                           max="60"
+                           step="5">
+                    <small class="form-text text-muted">
+                        Students arriving within this grace period will be marked as "present".
+                        After this period, they'll be marked as "late".
+                    </small>
+                </div>
+            </div>
+
+            <!-- Session Statistics -->
+            <div class="setting-group">
+                <h3><i class="fas fa-chart-bar"></i> Current Session Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-play-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4>Active Sessions</h4>
+                            <p class="stat-value">
+                                {% set active = get_active_session(course.id) %}
+                                {{ '1' if active else '0' }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4>Total Sessions</h4>
+                            <p class="stat-value">
+                                {% set sessions = supabase.table("class_sessions")
+                                    .select("*", count="exact")
+                                    .eq("course_id", course.id)
+                                    .execute() %}
+                                {{ sessions.count if hasattr(sessions, 'count') else len(sessions.data) }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h4>Avg. Attendance</h4>
+                            <p class="stat-value">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+                <a href="/lecturer/courses/{{ course.id }}/sessions" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Sessions
+                </a>
+                <button type="button" class="btn btn-outline-danger" onclick="resetSettings()">
+                    <i class="fas fa-undo"></i> Reset to Defaults
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Session History -->
+    <div class="history-card">
+        <h3><i class="fas fa-history"></i> Recent Session History</h3>
+        
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>Attendance</th>
+                        <th>Status</th>
+                        <th>End Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set recent_sessions = supabase.table("class_sessions")
+                        .select("*")
+                        .eq("course_id", course.id)
+                        .order("started_at", desc=True)
+                        .limit(10)
+                        .execute().data %}
+                    
+                    {% for session in recent_sessions %}
+                    <tr>
+                        <td>
+                            {{ session.started_at|datetimeformat('short') if session.started_at else 'N/A' }}
+                        </td>
+                        <td>
+                            {% if session.started_at and session.ended_at %}
+                                {% set start = datetime.fromisoformat(session.started_at.replace('Z', '+00:00')) %}
+                                {% set end = datetime.fromisoformat(session.ended_at.replace('Z', '+00:00')) %}
+                                {% set duration = end - start %}
+                                {{ format_timedelta(duration) }}
+                            {% else %}
+                                Ongoing
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set attendance_count = supabase.table("attendance")
+                                .select("*", count="exact")
+                                .eq("session_id", session.id)
+                                .execute() %}
+                            {{ attendance_count.count if hasattr(attendance_count, 'count') else len(attendance_count.data) }}
+                        </td>
+                        <td>
+                            {% if session.is_active %}
+                                <span class="badge badge-success">Active</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Ended</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if session.ended_reason == 'auto_expired' %}
+                                <span class="badge badge-warning">Auto-expired</span>
+                            {% elif session.ended_reason %}
+                                {{ session.ended_reason|replace('_', ' ')|title }}
+                            {% else %}
+                                Manual
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .session-settings-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .settings-header {
+        margin-bottom: 30px;
+    }
+    
+    .settings-header h2 {
+        margin: 0 0 10px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .breadcrumb {
+        color: #666;
+    }
+    
+    .breadcrumb a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    .breadcrumb a:hover {
+        text-decoration: underline;
+    }
+    
+    .settings-card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    
+    .setting-group {
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #eaeaea;
+    }
+    
+    .setting-group:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .setting-group h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .setting-description {
+        margin-bottom: 25px;
+        color: #666;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-text {
+        display: block;
+        margin-top: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .form-check {
+        margin-bottom: 15px;
+    }
+    
+    .form-check-input {
+        margin-right: 10px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .stat-card {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    
+    .stat-content h4 {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .stat-value {
+        margin: 5px 0 0 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eaeaea;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+    }
+    
+    .btn-outline-danger {
+        background: transparent;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    .btn-outline-danger:hover {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .history-card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .history-card h3 {
+        margin: 0 0 20px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .table th {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid #dee2e6;
+        color: #333;
+        font-weight: 600;
+    }
+    
+    .table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eaeaea;
+    }
+    
+    .badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .badge-secondary {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+</style>
+
+<script>
+    function resetSettings() {
+        if (confirm('Reset all settings to default values?')) {
+            document.getElementById('session_duration').value = 180;
+            document.getElementById('auto_end').checked = true;
+            document.getElementById('allow_late_entry').checked = true;
+            document.getElementById('late_entry_minutes').value = 5;
+        }
+    }
+    
+    // Validate form inputs
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const duration = document.getElementById('session_duration').value;
+        const lateMinutes = document.getElementById('late_entry_minutes').value;
+        
+        if (duration < 15 || duration > 360) {
+            alert('Session duration must be between 15 and 360 minutes');
+            e.preventDefault();
+            return;
+        }
+        
+        if (lateMinutes < 0 || lateMinutes > 60) {
+            alert('Late entry grace period must be between 0 and 60 minutes');
+            e.preventDefault();
+            return;
+        }
+    });
+</script>
+{% endblock %}

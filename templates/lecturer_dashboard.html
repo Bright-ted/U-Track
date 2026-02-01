@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="welcome-header">
+        <div class="welcome-content">
+            <h1>Welcome, {{ profile.title }} {{ profile.name }}</h1>
+            <p class="subtitle">Faculty Dashboard - Manage your courses and attendance</p>
+        </div>
+        <div class="user-profile">
+            <div class="profile-avatar">
+                {{ profile.name[0] }}
+            </div>
+            <div class="profile-info">
+                <h3>{{ profile.name }}</h3>
+                <p>{{ profile.email }} • {{ profile.staff_id }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ courses_count }}</h3>
+                <p>Total Courses</p>
+                <a href="/lecturer/courses" class="stat-link">
+                    View Courses <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ students_count }}</h3>
+                <p>Total Students</p>
+                <a href="/lecturer/students" class="stat-link">
+                    View Students <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ active_sessions_count }}</h3>
+                <p>Active Sessions</p>
+                <a href="/lecturer/courses" class="stat-link">
+                    View Sessions <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-flag"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ flagged_students_count }}</h3>
+                <p>Flagged Students</p>
+                <a href="#" class="stat-link">
+                    Review Flags <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="actions-section">
+        <h2 class="section-title">
+            <i class="fas fa-bolt"></i> Quick Actions
+        </h2>
+        
+        <div class="actions-grid">
+            <a href="/lecturer/courses/create" class="action-card">
+                <div class="action-icon create-course">
+                    <i class="fas fa-plus-circle"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Create Course</h3>
+                    <p>Add new course for current semester</p>
+                </div>
+            </a>
+            
+            <a href="/lecturer/courses" class="action-card">
+                <div class="action-icon manage-courses">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Manage Courses</h3>
+                    <p>View and edit your courses</p>
+                </div>
+            </a>
+            
+            <a href="/lecturer/courses" class="action-card">
+                <div class="action-icon take-attendance">
+                    <i class="fas fa-qrcode"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Take Attendance</h3>
+                    <p>Start QR session for a class</p>
+                </div>
+            </a>
+            
+            <a href="/lecturer/students" class="action-card">
+                <div class="action-icon view-students">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="action-content">
+                    <h3>View Students</h3>
+                    <p>See registered students</p>
+                </div>
+            </a>
+            
+            <a href="/lecturer/attendance" class="action-card">
+                <div class="action-icon generate-reports">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Attendance Reports</h3>
+                    <p>View attendance data</p>
+                </div>
+            </a>
+            
+            <a href="#" class="action-card">
+                <div class="action-icon flagged-students">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="action-content">
+                    <h3>Flagged Students</h3>
+                    <p>Review 3+ absences cases</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity & System Info -->
+    <div class="content-grid">
+        <div class="content-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-history"></i> Recent Activity
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-icon success">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-title">Logged into system</p>
+                            <p class="activity-time">Just now</p>
+                        </div>
+                    </div>
+                    
+                    {% if courses_count > 0 %}
+                    <div class="activity-item">
+                        <div class="activity-icon info">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-title">{{ courses_count }} courses assigned</p>
+                            <p class="activity-time">Current semester</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if active_sessions_count > 0 %}
+                    <div class="activity-item">
+                        <div class="activity-icon warning">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-title">{{ active_sessions_count }} active attendance sessions</p>
+                            <p class="activity-time">Currently running</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-card">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-info-circle"></i> System Information
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="info-list">
+                    <div class="info-item">
+                        <i class="fas fa-calendar"></i>
+                        <div class="info-content">
+                            <span class="info-label">Academic Year</span>
+                            <span class="info-value">2024/2025</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-layer-group"></i>
+                        <div class="info-content">
+                            <span class="info-label">Current Semester</span>
+                            <span class="info-value">Semester 1</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-university"></i>
+                        <div class="info-content">
+                            <span class="info-label">Department</span>
+                            <span class="info-value">{{ profile.department }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-id-card"></i>
+                        <div class="info-content">
+                            <span class="info-label">Staff ID</span>
+                            <span class="info-value">{{ profile.staff_id }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <div class="info-content">
+                            <span class="info-label">Email</span>
+                            <span class="info-value">{{ profile.email }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="system-notice">
+                    <div class="notice-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="notice-content">
+                        <h4>Attendance Policy Reminder</h4>
+                        <p>Students with <strong>3 or more absences</strong> are automatically flagged as "Unfit for Examination". Review flagged students regularly.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .dashboard-container {
+        padding: 20px;
+    }
+    
+    .welcome-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #003366 0%, #004080 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0, 51, 102, 0.3);
+    }
+    
+    .welcome-content h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+    
+    .subtitle {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 1rem;
+    }
+    
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: rgba(255,255,255,0.2);
+        padding: 15px 25px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .profile-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #FFCC00;
+        color: #003366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .profile-info h3 {
+        margin: 0;
+        font-size: 1.2rem;
+    }
+    
+    .profile-info p {
+        margin: 5px 0 0 0;
+        opacity: 0.8;
+        font-size: 0.9rem;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+        margin-bottom: 40px;
+    }
+    
+    .stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .stat-card:nth-child(1) .stat-icon { background: linear-gradient(135deg, #003366 0%, #004080 100%); }
+    .stat-card:nth-child(2) .stat-icon { background: linear-gradient(135deg, #FFCC00 0%, #E6B800 100%); }
+    .stat-card:nth-child(3) .stat-icon { background: linear-gradient(135deg, #CC0000 0%, #990000 100%); }
+    .stat-card:nth-child(4) .stat-icon { background: linear-gradient(135deg, #666666 0%, #444444 100%); }
+    
+    .stat-content h3 {
+        margin: 0;
+        font-size: 2rem;
+        color: #333;
+    }
+    
+    .stat-content p {
+        margin: 5px 0 10px 0;
+        color: #666;
+    }
+    
+    .stat-link {
+        color: #003366;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .stat-link:hover {
+        text-decoration: underline;
+    }
+    
+    .actions-section {
+        margin-bottom: 40px;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        color: #003366;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+    }
+    
+    .action-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .action-card:hover {
+        transform: translateY(-5px);
+        border-color: #003366;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+    }
+    
+    .create-course .action-icon { background: linear-gradient(135deg, #003366 0%, #004080 100%); }
+    .manage-courses .action-icon { background: linear-gradient(135deg, #FFCC00 0%, #E6B800 100%); }
+    .take-attendance .action-icon { background: linear-gradient(135deg, #CC0000 0%, #990000 100%); }
+    .view-students .action-icon { background: linear-gradient(135deg, #0066CC 0%, #004C99 100%); }
+    .generate-reports .action-icon { background: linear-gradient(135deg, #009933 0%, #006622 100%); }
+    .flagged-students .action-icon { background: linear-gradient(135deg, #666666 0%, #444444 100%); }
+    
+    .action-content h3 {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-size: 1.2rem;
+    }
+    
+    .action-content p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+    
+    .content-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .card-header {
+        background: #003366;
+        padding: 20px 25px;
+        color: white;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .card-body {
+        padding: 25px;
+    }
+    
+    .activity-list {
+        padding: 0;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .activity-icon.success { background: #d4edda; color: #155724; }
+    .activity-icon.info { background: #d1ecf1; color: #0c5460; }
+    .activity-icon.warning { background: #fff3cd; color: #856404; }
+    
+    .activity-title {
+        margin: 0;
+        color: #333;
+        font-weight: 500;
+    }
+    
+    .activity-time {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 0.85rem;
+    }
+    
+    .info-list {
+        padding: 0;
+    }
+    
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-item i {
+        width: 30px;
+        color: #003366;
+        font-size: 1.1rem;
+    }
+    
+    .info-content {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .info-label {
+        color: #666;
+        font-size: 0.95rem;
+    }
+    
+    .info-value {
+        color: #333;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .system-notice {
+        background: #fff3cd;
+        border-left: 4px solid #FFCC00;
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+    }
+    
+    .notice-icon {
+        color: #856404;
+        font-size: 1.5rem;
+    }
+    
+    .notice-content h4 {
+        margin: 0 0 10px 0;
+        color: #856404;
+    }
+    
+    .notice-content p {
+        margin: 0;
+        color: #856404;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+</style>
+</script>
+{% endblock %}

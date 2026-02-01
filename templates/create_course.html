@@ -1,0 +1,502 @@
+{% extends "base.html" %}
+
+{% block title %}Create Course{% endblock %}
+
+{% block content %}
+<div class="create-course-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <h1>
+                <i class="fas fa-plus-circle"></i> Create New Course
+            </h1>
+            <p class="subtitle">Add a new course for the current academic semester</p>
+        </div>
+        <a href="/lecturer/courses" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Courses
+        </a>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <div class="form-card">
+            {% if error %}
+            <div class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form method="post" class="create-course-form">
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i> Course Information
+                    </h3>
+                    
+                    <div class="form-group">
+                        <label for="course_code">
+                            <i class="fas fa-hashtag"></i> Course Code <span class="required">*</span>
+                        </label>
+                        <input type="text" id="course_code" name="course_code" 
+                               placeholder="e.g., CSC401, MAT101" required>
+                        <p class="help-text">Unique identifier for the course (no spaces)</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="course_title">
+                            <i class="fas fa-book"></i> Course Title <span class="required">*</span>
+                        </label>
+                        <input type="text" id="course_title" name="course_title" 
+                               placeholder="e.g., Introduction to Programming" required>
+                        <p class="help-text">Full title of the course as it appears in curriculum</p>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-calendar-alt"></i> Academic Information
+                    </h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="academic_year">
+                                <i class="fas fa-calendar"></i> Academic Year <span class="required">*</span>
+                            </label>
+                            <select id="academic_year" name="academic_year" required>
+                                <option value="">Select academic year</option>
+                                <option value="2023/2024">2023/2024</option>
+                                <option value="2024/2025" selected>2024/2025</option>
+                                <option value="2025/2026">2025/2026</option>
+                                <option value="2026/2027">2026/2027</option>
+                            </select>
+                            <p class="help-text">The academic year this course is offered</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="semester">
+                                <i class="fas fa-layer-group"></i> Semester <span class="required">*</span>
+                            </label>
+                            <select id="semester" name="semester" required>
+                                <option value="">Select semester</option>
+                                <option value="1">Semester 1</option>
+                                <option value="2">Semester 2</option>
+                                <option value="3">Summer Semester</option>
+                            </select>
+                            <p class="help-text">Semester in which this course is taught</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-create">
+                        <i class="fas fa-plus-circle"></i> Create Course
+                    </button>
+                    <a href="/lecturer/courses" class="btn-cancel">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="info-sidebar">
+            <div class="info-card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-lightbulb"></i> Creating Courses Tips
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Use Official Codes</h4>
+                            <p>Always use the official course codes from the university registry.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Check for Duplicates</h4>
+                            <p>Ensure the course doesn't already exist in the same academic year.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item">
+                        <div class="tip-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="tip-content">
+                            <h4>Accurate Titles</h4>
+                            <p>Use the exact course title as listed in the official curriculum.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="info-card">
+                <div class="card-header">
+                    <h3>
+                        <i class="fas fa-exclamation-triangle"></i> Important Notes
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="notice-item">
+                        <div class="notice-icon">
+                            <i class="fas fa-flag"></i>
+                        </div>
+                        <div class="notice-content">
+                            <h4>Attendance Tracking</h4>
+                            <p>Once created, this course will automatically track student attendance using QR codes.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="notice-item">
+                        <div class="notice-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="notice-content">
+                            <h4>Automatic Flagging</h4>
+                            <p>Students with 3+ absences will be automatically flagged as "Unfit for Examination".</p>
+                        </div>
+                    </div>
+                    
+                    <div class="notice-item">
+                        <div class="notice-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="notice-content">
+                            <h4>Real-time Reports</h4>
+                            <p>Attendance data is available in real-time and can be exported for administrative use.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .create-course-container {
+        padding: 20px;
+    }
+    
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .header-content h1 {
+        margin: 0;
+        color: #333;
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .subtitle {
+        margin: 10px 0 0 0;
+        color: #666;
+    }
+    
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-back:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+    }
+    
+    .form-container {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 30px;
+    }
+    
+    .form-card {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .error-message {
+        background: #ffebee;
+        color: #c62828;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #c62828;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .create-course-form {
+        width: 100%;
+    }
+    
+    .form-section {
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #eaeaea;
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        color: #333;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        color: #333;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+    
+    .required {
+        color: #ff6b6b;
+    }
+    
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 14px;
+        border: 2px solid #eaeaea;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    .help-text {
+        margin: 8px 0 0 0;
+        color: #666;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid #eaeaea;
+    }
+    
+    .btn-create {
+        flex: 1;
+        padding: 16px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-cancel {
+        padding: 16px 30px;
+        background: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+    
+    .btn-cancel:hover {
+        background: #545b62;
+        transform: translateY(-2px);
+    }
+    
+    .info-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .info-card .card-header {
+        background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+        padding: 20px;
+        color: white;
+    }
+    
+    .info-card .card-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .info-card .card-body {
+        padding: 25px;
+    }
+    
+    .tip-item,
+    .notice-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .tip-item:last-child,
+    .notice-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .tip-icon,
+    .notice-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .tip-icon {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .notice-icon {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .tip-content h4,
+    .notice-content h4 {
+        margin: 0 0 8px 0;
+        color: #333;
+        font-size: 1rem;
+    }
+    
+    .tip-content p,
+    .notice-content p {
+        margin: 0;
+        color: #666;
+        font-size: 0.9rem;
+        line-height: 1.4;
+    }
+</style>
+
+<script>
+    // Form validation
+    document.querySelector('.create-course-form').addEventListener('submit', function(e) {
+        const requiredFields = ['course_code', 'course_title', 'academic_year', 'semester'];
+        let isValid = true;
+        let errorMessage = '';
+
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (!element.value.trim()) {
+                isValid = false;
+                element.style.borderColor = '#ff6b6b';
+                errorMessage = 'Please fill in all required fields';
+            } else {
+                element.style.borderColor = '#eaeaea';
+            }
+        });
+
+        // Course code format validation
+        const courseCode = document.getElementById('course_code').value;
+        if (courseCode && courseCode.includes(' ')) {
+            isValid = false;
+            document.getElementById('course_code').style.borderColor = '#ff6b6b';
+            errorMessage = 'Course code should not contain spaces';
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            alert(errorMessage || 'Please fill in all required fields');
+            return false;
+        }
+
+        // Show loading state
+        const submitBtn = this.querySelector('.btn-create');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Course...';
+        submitBtn.disabled = true;
+
+        // Re-enable after 5 seconds if still on page
+        setTimeout(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }, 5000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base_student.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block content %}
+
+<h2>My Registered Courses</h2>
+
+{% if courses %}
+<ul>
+    {% for course in courses %}
+    <li>
+        {{ course.course_code }} - {{ course.course_title }}
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>
+    You have not registered for any courses.
+</p>
+{% endif %}
+
+{% endblock %}

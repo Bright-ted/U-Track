@@ -1,0 +1,2030 @@
+{% extends "base.html" %}
+
+{% block title %}Students - {{ course.course_code }}{% endblock %}
+
+
+
+{% block content %}
+<div class="students-container">
+    <!-- Header with Actions -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="course-info">
+                <h1>{{ course.course_code }} - Registered Students</h1>
+                <p class="subtitle">{{ course.course_title }} • Total: {{ students|length }} students</p>
+            </div>
+            <div class="header-actions">
+                <a href="/lecturer/courses/{{ course.id }}/sessions" class="primary-button">
+                    <i class="fas fa-calendar-check"></i> Take Attendance
+                </a>
+                <a href="/lecturer/courses" class="secondary-button">
+                    <i class="fas fa-arrow-left"></i> Back to Courses
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Actions -->
+    <div class="actions-card">
+        <div class="search-section">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" 
+                       class="search-input" 
+                       id="searchStudents" 
+                       placeholder="Search students by name, index number, or programme...">
+                <div class="search-tags">
+                    <span class="search-tag">{{ students|length }} students</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="action-btn export-btn" id="exportBtn">
+                    <i class="fas fa-download"></i> Export
+                </button>
+                <button class="action-btn stats-btn" id="statsBtn">
+                    <i class="fas fa-chart-bar"></i> Statistics
+                </button>
+                <button class="action-btn filter-btn" id="filterBtn">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="students-table-card">
+        <div class="table-header">
+            <div class="table-title">
+                <h3><i class="fas fa-users"></i> Student List</h3>
+                <span class="badge" id="studentCount">{{ students|length }}</span>
+            </div>
+            <div class="table-actions">
+                <div class="view-toggle">
+                    <button class="view-btn active" data-view="grid">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                    <button class="view-btn" data-view="list">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-body">
+            {% if students %}
+                <!-- Grid View -->
+                <div class="students-grid" id="studentsGrid">
+                    {% for student in students %}
+                    <div class="student-card" 
+                         data-index="{{ student.index_number|lower }}" 
+                         data-name="{{ student.full_name|lower }}"
+                         data-programme="{{ student.programme|lower }}"
+                         data-level="{{ student.level }}">
+                        <div class="student-card-header">
+                            <div class="student-avatar">
+                                {% if student.profile_photo_url %}
+                                    <img src="{{ student.profile_photo_url }}" 
+                                         alt="{{ student.full_name }}" 
+                                         class="avatar-img"
+                                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ student.full_name|urlencode }}&background=003366&color=fff&size=128'">
+                                {% else %}
+                                    <div class="avatar-default">
+                                        {{ student.full_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="student-status">
+                                <span class="status-dot active"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="student-card-body">
+                            <h4 class="student-name">{{ student.full_name }}</h4>
+                            <p class="student-email">{{ student.email }}</p>
+                            
+                            <div class="student-info">
+                                <div class="info-item">
+                                    <i class="fas fa-id-card"></i>
+                                    <span class="info-label">Index</span>
+                                    <span class="info-value index-number">{{ student.index_number }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <span class="info-label">Programme</span>
+                                    <span class="info-value programme">{{ student.programme }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span class="info-label">Level</span>
+                                    <span class="info-value level-badge">{{ student.level }}</span>
+                                </div>
+                                <div class="info-item">
+                                    <i class="fas fa-building"></i>
+                                    <span class="info-label">Department</span>
+                                    <span class="info-value">{{ student.department }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="student-card-actions">
+                            <button class="action-btn view-details" 
+                                    data-student-id="{{ student.student_id }}"
+                                    data-index="{{ student.index_number }}"
+                                    data-name="{{ student.full_name }}"
+                                    data-email="{{ student.email }}"
+                                    data-programme="{{ student.programme }}"
+                                    data-level="{{ student.level }}"
+                                    data-department="{{ student.department }}"
+                                    data-photo="{{ student.profile_photo_url }}">
+                                <i class="fas fa-eye"></i>
+                                <span>View</span>
+                            </button>
+                            <a href="mailto:{{ student.email }}?subject={{ course.course_code }} - {{ course.course_title }}" 
+                               class="action-btn email-btn">
+                                <i class="fas fa-envelope"></i>
+                                <span>Email</span>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Table View (Hidden by default) -->
+                <div class="students-table-view" id="studentsTableView" style="display: none;">
+                    <div class="table-container">
+                        <div class="table">
+                            <div class="table-row header">
+                                <div class="table-cell">Profile</div>
+                                <div class="table-cell">Name & Email</div>
+                                <div class="table-cell">Index Number</div>
+                                <div class="table-cell">Programme</div>
+                                <div class="table-cell">Level</div>
+                                <div class="table-cell">Department</div>
+                                <div class="table-cell">Actions</div>
+                            </div>
+                            
+                            {% for student in students %}
+                            <div class="table-row student-row"
+                                 data-index="{{ student.index_number|lower }}" 
+                                 data-name="{{ student.full_name|lower }}"
+                                 data-programme="{{ student.programme|lower }}"
+                                 data-level="{{ student.level }}">
+                                <div class="table-cell">
+                                    <div class="student-avatar-small">
+                                        {% if student.profile_photo_url %}
+                                            <img src="{{ student.profile_photo_url }}" 
+                                                 alt="{{ student.full_name }}" 
+                                                 class="avatar-img"
+                                                 onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ student.full_name|urlencode }}&background=003366&color=fff&size=40'">
+                                        {% else %}
+                                            <div class="avatar-default">
+                                                {{ student.full_name|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="table-cell">
+                                    <div class="student-info">
+                                        <strong>{{ student.full_name }}</strong>
+                                        <div class="email">{{ student.email }}</div>
+                                    </div>
+                                </div>
+                                <div class="table-cell">
+                                    <span class="index-badge">{{ student.index_number }}</span>
+                                </div>
+                                <div class="table-cell">
+                                    {{ student.programme }}
+                                </div>
+                                <div class="table-cell">
+                                    <span class="level-badge">{{ student.level }}00</span>
+                                </div>
+                                <div class="table-cell">
+                                    {{ student.department }}
+                                </div>
+                                <div class="table-cell">
+                                    <div class="action-buttons-small">
+                                        <button class="action-btn-small view-details" 
+                                                data-student-id="{{ student.student_id }}"
+                                                data-index="{{ student.index_number }}"
+                                                data-name="{{ student.full_name }}"
+                                                data-email="{{ student.email }}"
+                                                data-programme="{{ student.programme }}"
+                                                data-level="{{ student.level }}"
+                                                data-department="{{ student.department }}"
+                                                data-photo="{{ student.profile_photo_url }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <a href="mailto:{{ student.email }}?subject={{ course.course_code }} - {{ course.course_title }}" 
+                                           class="action-btn-small email-btn">
+                                            <i class="fas fa-envelope"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Modal -->
+                <div class="modal-overlay" id="statsModal">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-chart-bar"></i> Class Statistics</h3>
+                            <button class="modal-close" onclick="closeModal('statsModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3>{{ students|length }}</h3>
+                                        <p>Total Students</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-graduation-cap"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="programmeCount">0</h3>
+                                        <p>Unique Programmes</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="averageLevel">0</h3>
+                                        <p>Average Level</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-icon">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="departmentCount">0</h3>
+                                        <p>Departments</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="stats-charts">
+                                <div class="chart-section">
+                                    <h4>Programme Distribution</h4>
+                                    <div class="chart-container">
+                                        <canvas id="programmeChart"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-section">
+                                    <h4>Level Distribution</h4>
+                                    <div class="chart-container">
+                                        <canvas id="levelChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Student Details Modal -->
+                <div class="modal-overlay" id="studentModal">
+                    <div class="modal modal-lg">
+                        <div class="modal-header">
+                            <h3>Student Profile</h3>
+                            <button class="modal-close" onclick="closeModal('studentModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body" id="studentModalBody">
+                            <!-- Content loaded by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Filter Modal -->
+                <div class="modal-overlay" id="filterModal">
+                    <div class="modal">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-filter"></i> Filter Students</h3>
+                            <button class="modal-close" onclick="closeModal('filterModal')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="filter-section">
+                                <h4>By Level</h4>
+                                <div class="filter-options">
+                                    {% set levels = [1, 2, 3, 4, 5, 6] %}
+                                    {% for level in levels %}
+                                    <label class="filter-option">
+                                        <input type="checkbox" name="level" value="{{ level }}">
+                                        <span class="filter-label">Level {{ level }}00</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="filter-section">
+                                <h4>By Programme</h4>
+                                <div class="filter-options" id="programmeFilters">
+                                    <!-- Dynamically populated -->
+                                </div>
+                            </div>
+                            
+                            <div class="filter-actions">
+                                <button class="secondary-button" onclick="clearFilters()">
+                                    Clear All
+                                </button>
+                                <button class="primary-button" onclick="applyFilters()">
+                                    Apply Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-users-slash"></i>
+                    </div>
+                    <h3>No Students Registered</h3>
+                    <p>No students have registered for this course yet.</p>
+                    <a href="/lecturer/courses" class="primary-button">
+                        <i class="fas fa-arrow-left"></i> Back to Courses
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== CSS Variables ===== */
+    :root {
+        --primary-color: #003366;
+        --primary-light: #4d88ff;
+        --secondary-color: #10b981;
+        --accent-color: #f59e0b;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --success-color: #10b981;
+        
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --text-muted: #94a3b8;
+        
+        --bg-primary: #ffffff;
+        --bg-secondary: #f8fafc;
+        --bg-card: #ffffff;
+        
+        --border-color: #e2e8f0;
+        --border-radius: 12px;
+        --box-shadow: 0 4px 16px rgba(0, 35, 68, 0.08);
+        --box-shadow-hover: 0 8px 24px rgba(0, 35, 68, 0.12);
+        
+        --header-height: 120px;
+        --sidebar-width: 280px;
+        
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* ===== Base Styles ===== */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+    }
+
+    .students-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* ===== Page Header ===== */
+    .page-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, #002244 100%);
+        color: white;
+        padding: 20px 0;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-header .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 30px;
+    }
+
+    .page-header .header-title h1 {
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+
+    .page-header .header-title .subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .user-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 10px 16px;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .user-icon {
+        background-color: rgba(255, 255, 255, 0.2);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .user-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .user-role {
+        font-size: 12px;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .user-name {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .logout-btn {
+        color: white;
+        text-decoration: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        transition: var(--transition);
+    }
+
+    .logout-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ===== Header Section ===== */
+    .header-section {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        padding: 24px 32px;
+        margin-bottom: 24px;
+        box-shadow: var(--box-shadow);
+        animation: slideDown 0.5s ease;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+    }
+
+    .course-info h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-primary);
+    }
+
+    .course-info .subtitle {
+        font-size: 14px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+
+    /* ===== Buttons ===== */
+    .primary-button, .secondary-button, .action-btn, .action-btn-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        white-space: nowrap;
+    }
+
+    .primary-button {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .primary-button:hover {
+        background-color: #002244;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 51, 102, 0.3);
+    }
+
+    .secondary-button {
+        background-color: white;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+
+    .secondary-button:hover {
+        background-color: var(--primary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* ===== Search and Actions ===== */
+    .actions-card {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        margin-bottom: 24px;
+        box-shadow: var(--box-shadow);
+    }
+
+    .search-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 16px;
+        color: var(--text-muted);
+        font-size: 16px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 14px 20px 14px 48px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 14px;
+        transition: var(--transition);
+        background: var(--bg-secondary);
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+        background: white;
+    }
+
+    .search-tags {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .search-tag {
+        background: var(--primary-color);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+    }
+
+    .action-btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        background: white;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .action-btn:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        transform: translateY(-2px);
+    }
+
+    .action-btn i {
+        font-size: 14px;
+    }
+
+    /* ===== Students Table Card ===== */
+    .students-table-card {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 32px;
+        border-bottom: 2px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+
+    .table-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .table-title h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .table-title i {
+        color: var(--primary-color);
+    }
+
+    .badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .view-toggle {
+        display: flex;
+        gap: 4px;
+        background: var(--bg-secondary);
+        padding: 4px;
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+    }
+
+    .view-btn {
+        padding: 8px 12px;
+        border: none;
+        background: transparent;
+        color: var(--text-muted);
+        cursor: pointer;
+        border-radius: 6px;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+    }
+
+    .view-btn.active {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .view-btn:hover:not(.active) {
+        background: var(--border-color);
+    }
+
+    /* ===== Students Grid View ===== */
+    .students-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 24px;
+        padding: 32px;
+    }
+
+    .student-card {
+        background: var(--bg-card);
+        border-radius: var(--border-radius);
+        border: 2px solid var(--border-color);
+        overflow: hidden;
+        transition: var(--transition);
+        animation: fadeInUp 0.5s ease;
+        animation-delay: calc(var(--item-index, 0) * 0.05s);
+        opacity: 0;
+        animation-fill-mode: forwards;
+    }
+
+    .student-card:hover {
+        border-color: var(--primary-light);
+        box-shadow: var(--box-shadow-hover);
+        transform: translateY(-4px);
+    }
+
+    .student-card.hidden {
+        display: none;
+    }
+
+    .student-card-header {
+        position: relative;
+        padding: 24px 24px 16px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, #004488 100%);
+    }
+
+    .student-avatar {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 16px;
+        position: relative;
+    }
+
+    .avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .avatar-default {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary-color);
+        border: 4px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .student-status {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+    }
+
+    .status-dot {
+        display: block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #10b981;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #10b981;
+    }
+
+    .status-dot.active {
+        background: #10b981;
+    }
+
+    .student-card-body {
+        padding: 20px;
+    }
+
+    .student-name {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text-primary);
+    }
+
+    .student-email {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin-bottom: 20px;
+        word-break: break-word;
+    }
+
+    .student-info {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item i {
+        color: var(--primary-color);
+        width: 20px;
+        font-size: 14px;
+    }
+
+    .info-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        width: 80px;
+    }
+
+    .info-value {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .level-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .student-card-actions {
+        padding: 16px 20px;
+        background: var(--bg-secondary);
+        border-top: 2px solid var(--border-color);
+        display: flex;
+        gap: 12px;
+    }
+
+    .student-card-actions .action-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .student-card-actions .email-btn {
+        background: var(--primary-color);
+        color: white;
+        border: none;
+    }
+
+    .student-card-actions .email-btn:hover {
+        background: #002244;
+    }
+
+    /* ===== Table View ===== */
+    .students-table-view {
+        padding: 24px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        border-radius: var(--border-radius);
+        border: 2px solid var(--border-color);
+    }
+
+    .table {
+        min-width: 1000px;
+        width: 100%;
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 80px 2fr 1fr 1.5fr 80px 1.5fr 120px;
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition);
+    }
+
+    .table-row.header {
+        background: var(--bg-secondary);
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .table-row.student-row:hover {
+        background: var(--bg-secondary);
+    }
+
+    .table-row.hidden {
+        display: none;
+    }
+
+    .table-cell {
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .student-avatar-small {
+        width: 40px;
+        height: 40px;
+    }
+
+    .student-avatar-small .avatar-default {
+        font-size: 16px;
+        border: 2px solid var(--border-color);
+    }
+
+    .student-avatar-small .avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--border-color);
+    }
+
+    .table-cell .student-info strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .table-cell .student-info .email {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .index-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .action-buttons-small {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn-small {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        border: 2px solid var(--border-color);
+        background: white;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition);
+    }
+
+    .action-btn-small:hover {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+    }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+        text-align: center;
+        padding: 80px 40px;
+    }
+
+    .empty-state-icon {
+        font-size: 64px;
+        color: var(--border-color);
+        margin-bottom: 24px;
+    }
+
+    .empty-state h3 {
+        font-size: 24px;
+        color: var(--text-primary);
+        margin-bottom: 12px;
+        font-weight: 700;
+    }
+
+    .empty-state p {
+        color: var(--text-secondary);
+        margin-bottom: 32px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* ===== Modals ===== */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        padding: 20px;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .modal {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+    }
+
+    .modal-lg {
+        max-width: 800px;
+    }
+
+    .modal-header {
+        padding: 24px 32px;
+        border-bottom: 2px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-secondary);
+    }
+
+    .modal-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 20px;
+        padding: 4px;
+        transition: var(--transition);
+    }
+
+    .modal-close:hover {
+        color: var(--danger-color);
+        transform: rotate(90deg);
+    }
+
+    .modal-body {
+        padding: 32px;
+    }
+
+    /* ===== Statistics Modal ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+
+    .stat-card {
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        text-align: center;
+        border: 2px solid var(--border-color);
+        transition: var(--transition);
+    }
+
+    .stat-card:hover {
+        border-color: var(--primary-color);
+        transform: translateY(-4px);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 24px;
+        color: white;
+    }
+
+    .stat-content h3 {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+
+    .stat-content p {
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stats-charts {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 32px;
+    }
+
+    .chart-section {
+        background: var(--bg-secondary);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        border: 2px solid var(--border-color);
+    }
+
+    .chart-section h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .chart-container {
+        height: 250px;
+        position: relative;
+    }
+
+    /* ===== Filter Modal ===== */
+    .filter-section {
+        margin-bottom: 32px;
+    }
+
+    .filter-section h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .filter-options {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 12px;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        border: 2px solid var(--border-color);
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .filter-option:hover {
+        border-color: var(--primary-color);
+    }
+
+    .filter-option input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--primary-color);
+    }
+
+    .filter-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+        cursor: pointer;
+    }
+
+    .filter-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 2px solid var(--border-color);
+    }
+
+    /* ===== Animations ===== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ===== Responsive Design ===== */
+    @media (max-width: 1024px) {
+        .students-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+        
+        .search-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-input-wrapper {
+            min-width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .students-container {
+            padding: 16px;
+        }
+        
+        .page-header .header-content {
+            flex-direction: column;
+            gap: 16px;
+            text-align: center;
+        }
+        
+        .user-section {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .user-info {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .header-content {
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .students-grid {
+            grid-template-columns: 1fr;
+            padding: 16px;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-charts {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .modal {
+            margin: 10px;
+            padding: 0;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .filter-options {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    // Add Chart.js library
+    const chartScript = document.createElement('script');
+    chartScript.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js';
+    document.head.appendChild(chartScript);
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize animations
+        initializeAnimations();
+        
+        // Setup search functionality
+        setupSearch();
+        
+        // Setup view toggle
+        setupViewToggle();
+        
+        // Setup modals
+        setupModals();
+        
+        // Setup export
+        setupExport();
+        
+        // Setup filters
+        setupFilters();
+    });
+    
+    function initializeAnimations() {
+        // Add index for staggered animations
+        document.querySelectorAll('.student-card').forEach((card, index) => {
+            card.style.setProperty('--item-index', index);
+        });
+    }
+    
+    function setupSearch() {
+        const searchInput = document.getElementById('searchStudents');
+        const studentCards = document.querySelectorAll('.student-card, .student-row');
+        const studentCount = document.getElementById('studentCount');
+        
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            let visibleCount = 0;
+            
+            studentCards.forEach(card => {
+                const index = card.dataset.index;
+                const name = card.dataset.name;
+                const programme = card.dataset.programme;
+                
+                if (index.includes(searchTerm) || name.includes(searchTerm) || programme.includes(searchTerm)) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            
+            // Update count
+            studentCount.textContent = visibleCount;
+            
+            // Update search tag
+            const searchTag = document.querySelector('.search-tag');
+            if (searchTag) {
+                searchTag.textContent = `${visibleCount} students`;
+            }
+        });
+    }
+    
+    function setupViewToggle() {
+        const viewButtons = document.querySelectorAll('.view-btn');
+        const gridView = document.getElementById('studentsGrid');
+        const tableView = document.getElementById('studentsTableView');
+        
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const view = this.dataset.view;
+                
+                // Update active button
+                viewButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show selected view
+                if (view === 'grid') {
+                    gridView.style.display = 'grid';
+                    tableView.style.display = 'none';
+                } else {
+                    gridView.style.display = 'none';
+                    tableView.style.display = 'block';
+                }
+            });
+        });
+    }
+    
+    function setupModals() {
+        // Student details modal
+        document.querySelectorAll('.view-details').forEach(button => {
+            button.addEventListener('click', function() {
+                const studentData = {
+                    id: this.dataset.studentId,
+                    index: this.dataset.index,
+                    name: this.dataset.name,
+                    email: this.dataset.email,
+                    programme: this.dataset.programme,
+                    level: this.dataset.level,
+                    department: this.dataset.department,
+                    photo: this.dataset.photo
+                };
+                
+                showStudentDetails(studentData);
+            });
+        });
+        
+        // Statistics modal
+        document.getElementById('statsBtn').addEventListener('click', function() {
+            calculateStatistics();
+            createCharts();
+            openModal('statsModal');
+        });
+        
+        // Filter modal
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            populateProgrammeFilters();
+            openModal('filterModal');
+        });
+    }
+    
+    function showStudentDetails(student) {
+        const modalBody = document.getElementById('studentModalBody');
+        
+        let avatarHtml = '';
+        if (student.photo) {
+            avatarHtml = `
+                <img src="${student.photo}" 
+                     alt="${student.name}" 
+                     class="avatar-img"
+                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(student.name)}&background=003366&color=fff&size=128'">`;
+        } else {
+            avatarHtml = `<div class="avatar-default">${student.name.charAt(0).toUpperCase()}</div>`;
+        }
+        
+        modalBody.innerHTML = `
+            <div class="student-profile">
+                <div class="profile-header">
+                    <div class="profile-avatar-large">
+                        ${avatarHtml}
+                    </div>
+                    <div class="profile-info">
+                        <h2>${student.name}</h2>
+                        <p class="profile-subtitle">${student.index}</p>
+                        <p class="profile-subtitle" style="font-size: 14px;">ID: ${student.id}</p>
+                    </div>
+                </div>
+                
+                <div class="profile-details">
+                    <div class="detail-row">
+                        <div class="detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Email Address</span>
+                                <span class="detail-value">${student.email}</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-graduation-cap"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Programme</span>
+                                <span class="detail-value">${student.programme}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <div class="detail-item">
+                            <i class="fas fa-layer-group"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Level</span>
+                                <span class="detail-value">${student.level}00 Level</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <i class="fas fa-building"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Department</span>
+                                <span class="detail-value">${student.department}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-stats">
+                    <h3>Course Performance</h3>
+                    <div class="stats-mini">
+                        <div class="stat-mini">
+                            <div class="stat-value" id="attendanceStat">85%</div>
+                            <div class="stat-label">Attendance Rate</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-value" id="sessionsStat">12</div>
+                            <div class="stat-label">Sessions Attended</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-value" id="statusStat">Active</div>
+                            <div class="stat-label">Status</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="profile-actions" style="margin-top: 30px; display: flex; gap: 12px;">
+                    <a href="mailto:${student.email}?subject={{ course.course_code }} - {{ course.course_title }}" 
+                       class="primary-button" style="flex: 1;">
+                        <i class="fas fa-envelope"></i> Send Email
+                    </a>
+                    <button class="secondary-button" onclick="closeModal('studentModal')" style="flex: 1;">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        // Load student statistics (you would replace this with actual API call)
+        loadStudentStatistics(student.id);
+        
+        openModal('studentModal');
+    }
+    
+    function loadStudentStatistics(studentId) {
+        // This is where you would make an API call to get real student statistics
+        // For now, we'll use mock data
+        setTimeout(() => {
+            // Mock attendance data
+            const attendance = Math.floor(Math.random() * 20) + 80; // 80-100%
+            const sessions = Math.floor(Math.random() * 15) + 5; // 5-20 sessions
+            
+            document.getElementById('attendanceStat').textContent = `${attendance}%`;
+            document.getElementById('sessionsStat').textContent = sessions;
+            
+            // Determine status based on attendance
+            if (attendance >= 90) {
+                document.getElementById('statusStat').textContent = 'Excellent';
+                document.getElementById('statusStat').style.color = '#10b981';
+            } else if (attendance >= 75) {
+                document.getElementById('statusStat').textContent = 'Good';
+                document.getElementById('statusStat').style.color = '#3b82f6';
+            } else if (attendance >= 60) {
+                document.getElementById('statusStat').textContent = 'Fair';
+                document.getElementById('statusStat').style.color = '#f59e0b';
+            } else {
+                document.getElementById('statusStat').textContent = 'At Risk';
+                document.getElementById('statusStat').style.color = '#ef4444';
+            }
+        }, 500);
+    }
+    
+    function calculateStatistics() {
+        const visibleStudents = document.querySelectorAll('.student-card:not(.hidden), .student-row:not(.hidden)');
+        const programmes = new Set();
+        const departments = new Set();
+        const levels = new Set();
+        const levelCounts = { 100: 0, 200: 0, 300: 0, 400: 0, 500: 0, 600: 0 };
+        let totalLevel = 0;
+        
+        visibleStudents.forEach(student => {
+            const programme = student.dataset.programme;
+            const level = parseInt(student.dataset.level);
+            
+            if (programme) {
+                programmes.add(programme);
+            }
+            
+            // Get department from student element
+            let department = '';
+            if (student.classList.contains('student-card')) {
+                department = student.querySelector('.info-item:nth-child(4) .info-value')?.textContent || '';
+            } else {
+                department = student.querySelector('.table-cell:nth-child(6)')?.textContent || '';
+            }
+            
+            if (department) {
+                departments.add(department.trim());
+            }
+            
+            if (level && !isNaN(level)) {
+                levels.add(level);
+                totalLevel += level;
+                
+                // Count by level (100, 200, 300, etc.)
+                const levelGroup = level * 1;
+                if (levelCounts[levelGroup] !== undefined) {
+                    levelCounts[levelGroup]++;
+                }
+            }
+        });
+        
+        // Update statistics display
+        document.getElementById('programmeCount').textContent = programmes.size;
+        document.getElementById('departmentCount').textContent = departments.size;
+        
+        if (visibleStudents.length > 0) {
+            const avgLevel = Math.round(totalLevel / visibleStudents.length);
+            document.getElementById('averageLevel').textContent = avgLevel;
+        }
+        
+        return { programmes, levelCounts, programmeCounts: getProgrammeCounts() };
+    }
+    
+    function getProgrammeCounts() {
+        const programmeCounts = {};
+        document.querySelectorAll('.student-card:not(.hidden), .student-row:not(.hidden)').forEach(student => {
+            const programme = student.dataset.programme;
+            if (programme) {
+                programmeCounts[programme] = (programmeCounts[programme] || 0) + 1;
+            }
+        });
+        return programmeCounts;
+    }
+    
+    function createCharts() {
+        const stats = calculateStatistics();
+        
+        // Programme distribution chart
+        const programmeChart = document.getElementById('programmeChart');
+        if (programmeChart && stats.programmeCounts) {
+            const ctx = programmeChart.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (programmeChart.chart) {
+                programmeChart.chart.destroy();
+            }
+            
+            programmeChart.chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(stats.programmeCounts),
+                    datasets: [{
+                        data: Object.values(stats.programmeCounts),
+                        backgroundColor: [
+                            '#003366', '#4d88ff', '#10b981', '#f59e0b',
+                            '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Level distribution chart
+        const levelChart = document.getElementById('levelChart');
+        if (levelChart) {
+            const ctx = levelChart.getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (levelChart.chart) {
+                levelChart.chart.destroy();
+            }
+            
+            levelChart.chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['100', '200', '300', '400', '500', '600'],
+                    datasets: [{
+                        label: 'Students',
+                        data: [
+                            stats.levelCounts[100] || 0,
+                            stats.levelCounts[200] || 0,
+                            stats.levelCounts[300] || 0,
+                            stats.levelCounts[400] || 0,
+                            stats.levelCounts[500] || 0,
+                            stats.levelCounts[600] || 0
+                        ],
+                        backgroundColor: '#003366',
+                        borderColor: '#002244',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function populateProgrammeFilters() {
+        const programmeFilters = document.getElementById('programmeFilters');
+        const programmes = new Set();
+        
+        document.querySelectorAll('.student-card, .student-row').forEach(student => {
+            const programme = student.dataset.programme;
+            if (programme) {
+                programmes.add(programme);
+            }
+        });
+        
+        programmeFilters.innerHTML = '';
+        programmes.forEach(programme => {
+            const filterOption = document.createElement('label');
+            filterOption.className = 'filter-option';
+            filterOption.innerHTML = `
+                <input type="checkbox" name="programme" value="${programme}">
+                <span class="filter-label">${programme}</span>
+            `;
+            programmeFilters.appendChild(filterOption);
+        });
+    }
+    
+    function setupExport() {
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const visibleStudents = document.querySelectorAll('.student-card:not(.hidden), .student-row:not(.hidden)');
+            
+            if (visibleStudents.length === 0) {
+                showNotification('No students to export', 'error');
+                return;
+            }
+            
+            // Create CSV content
+            let csv = 'Index Number,Full Name,Email,Programme,Level,Department\n';
+            
+            visibleStudents.forEach(student => {
+                let index, name, email, programme, level, department;
+                
+                if (student.classList.contains('student-card')) {
+                    index = student.querySelector('.index-number').textContent;
+                    name = student.querySelector('.student-name').textContent;
+                    email = student.querySelector('.student-email').textContent;
+                    programme = student.querySelector('.programme').textContent;
+                    level = student.querySelector('.level-badge').textContent;
+                    department = student.querySelector('.info-item:nth-child(4) .info-value')?.textContent || '';
+                } else {
+                    index = student.querySelector('.index-badge').textContent;
+                    name = student.querySelector('strong').textContent;
+                    email = student.querySelector('.email').textContent;
+                    programme = student.querySelector('.table-cell:nth-child(4)').textContent;
+                    level = student.querySelector('.level-badge').textContent;
+                    department = student.querySelector('.table-cell:nth-child(6)').textContent;
+                }
+                
+                csv += `"${index}","${name}","${email}","${programme}","${level}","${department}"\n`;
+            });
+            
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute('href', url);
+            link.setAttribute('download', `{{ course.course_code }}-students-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification(`Exported ${visibleStudents.length} students`, 'success');
+        });
+    }
+    
+    function setupFilters() {
+        // Filter functionality will be implemented by applyFilters function
+    }
+    
+    function applyFilters() {
+        const selectedLevels = Array.from(document.querySelectorAll('input[name="level"]:checked')).map(cb => parseInt(cb.value));
+        const selectedProgrammes = Array.from(document.querySelectorAll('input[name="programme"]:checked')).map(cb => cb.value);
+        
+        const studentCards = document.querySelectorAll('.student-card, .student-row');
+        let visibleCount = 0;
+        
+        studentCards.forEach(card => {
+            const level = parseInt(card.dataset.level);
+            const programme = card.dataset.programme;
+            
+            const levelMatch = selectedLevels.length === 0 || (level && selectedLevels.includes(level));
+            const programmeMatch = selectedProgrammes.length === 0 || (programme && selectedProgrammes.includes(programme));
+            
+            if (levelMatch && programmeMatch) {
+                card.classList.remove('hidden');
+                visibleCount++;
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+        
+        document.getElementById('studentCount').textContent = visibleCount;
+        const searchTag = document.querySelector('.search-tag');
+        if (searchTag) {
+            searchTag.textContent = `${visibleCount} students`;
+        }
+        
+        closeModal('filterModal');
+        showNotification(`Showing ${visibleCount} students`, 'success');
+    }
+    
+    function clearFilters() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        
+        const studentCards = document.querySelectorAll('.student-card, .student-row');
+        studentCards.forEach(card => card.classList.remove('hidden'));
+        
+        document.getElementById('studentCount').textContent = studentCards.length;
+        const searchTag = document.querySelector('.search-tag');
+        if (searchTag) {
+            searchTag.textContent = `${studentCards.length} students`;
+        }
+        
+        showNotification('All filters cleared', 'info');
+    }
+    
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Remove existing notification
+        const existingNotification = document.querySelector('.notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // Add notification styles if not already added
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                .notification {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: white;
+                    padding: 16px 24px;
+                    border-radius: 12px;
+                    box-shadow: 0 8px 24px rgba(0, 35, 68, 0.15);
+                    z-index: 2000;
+                    animation: slideIn 0.3s ease;
+                    border-left: 4px solid #003366;
+                }
+                
+                .notification-success {
+                    border-left-color: #10b981;
+                }
+                
+                .notification-error {
+                    border-left-color: #ef4444;
+                }
+                
+                .notification-info {
+                    border-left-color: #3b82f6;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-weight: 500;
+                }
+                
+                @keyframes slideIn {
+                    from {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                    to {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                }
+                
+                @keyframes slideOut {
+                    from {
+                        transform: translateX(0);
+                        opacity: 1;
+                    }
+                    to {
+                        transform: translateX(100%);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal-overlay')) {
+            e.target.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    });
+    
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            document.body.style.overflow = 'auto';
+        }
+    });
+</script>
+{% endblock %}

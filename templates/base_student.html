@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{% block title %}Student Portal{% endblock %} - U-Track</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            background: #f8f9fa;
+        }
+
+        .student-sidebar {
+            width: 250px;
+            background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-header {
+            padding: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: white;
+            font-weight: 600;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .nav-menu {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            padding: 14px 25px;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 4px solid #4fc3f7;
+        }
+
+        .nav-item.active {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border-left: 4px solid #4fc3f7;
+        }
+
+        .nav-item i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 1.1rem;
+        }
+
+        .logout-item {
+            margin-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 20px;
+        }
+
+        .student-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .user-info h3 {
+            margin: 0;
+            color: #333;
+        }
+
+        .user-info p {
+            margin: 5px 0 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .page-title h1 {
+            margin: 0;
+            color: #1a237e;
+            font-size: 1.8rem;
+        }
+
+        .page-title p {
+            margin: 5px 0 0 0;
+            color: #666;
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
+            border: 1px solid #eaeaea;
+        }
+
+        /* Button Styles */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #42b883 0%, #347357 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 184, 131, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa726 0%, #f57c00 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.4);
+        }
+
+        .btn-info {
+            background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+            color: white;
+        }
+
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(41, 182, 246, 0.4);
+        }
+
+        /* Badge Styles */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+
+        /* Camera Scanner Styles */
+.camera-scanner {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.scanner-container {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+#video {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.scanner-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.scan-area {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 250px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+.scan-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #4CAF50, transparent);
+    animation: scan 2s infinite linear;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+@keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+}
+
+.camera-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.camera-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.camera-btn-primary {
+    background: #4CAF50;
+    color: white;
+}
+
+.camera-btn-primary:hover {
+    background: #388E3C;
+    transform: translateY(-2px);
+}
+
+.camera-btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.camera-btn-secondary:hover {
+    background: #ddd;
+}
+
+.manual-input {
+    margin-top: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.manual-input h4 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.input-group input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: #4CAF50;
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+}
+
+/* Status Messages */
+.status-container {
+    margin-bottom: 20px;
+}
+
+.status-message {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.status-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Results Display */
+.results-container {
+    margin-top: 20px;
+}
+
+.student-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #4CAF50;
+}
+
+.student-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.student-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.student-info h4 {
+    margin: 0;
+    color: #333;
+}
+
+.student-info p {
+    margin: 5px 0 0 0;
+    color: #666;
+}
+
+.check-in-time {
+    margin-left: auto;
+    text-align: right;
+}
+
+.check-in-time .time {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notification Badge */
+        .nav-badge {
+            background: #ff4757;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: auto;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Chat-specific colors */
+        .chat-indicator {
+            position: relative;
+        }
+
+        .chat-indicator::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: translateY(-50%) scale(1); }
+            50% { opacity: 0.5; transform: translateY(-50%) scale(1.2); }
+            100% { opacity: 1; transform: translateY(-50%) scale(1); }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="student-sidebar">
+    <div class="sidebar-header">
+        <h2><i class="fas fa-calendar-check"></i> U-Track</h2>
+        <div class="subtitle">Student Portal</div>
+    </div>
+    
+    <div class="nav-menu">
+        <a href="/student/dashboard" class="nav-item {% if request.path == '/student/dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i> Dashboard
+        </a>
+        <a href="/student/my-courses" class="nav-item {% if request.path == '/student/my-courses' %}active{% endif %}">
+            <i class="fas fa-book"></i> My Courses
+        </a>
+        <a href="/student/browse-courses" class="nav-item {% if request.path == '/student/browse-courses' %}active{% endif %}">
+            <i class="fas fa-search"></i> Browse Courses
+        </a>
+        <a href="/student/attendance" class="nav-item {% if request.path == '/student/attendance' %}active{% endif %}">
+            <i class="fas fa-history"></i> Attendance History
+        </a>
+        <a href="/student/scan" class="nav-item {% if request.path == '/student/scan' %}active{% endif %}">
+            <i class="fas fa-qrcode"></i> Scan QR
+        </a>
+        <!-- ADDED CHAT LINK -->
+        <a href="/student/chat" class="nav-item chat-indicator {% if request.path == '/student/chat' %}active{% endif %}">
+            <i class="fas fa-comments"></i> Chat
+            <span class="nav-badge" id="unreadMessagesCount">0</span>
+        </a>
+        
+        <div class="logout-item">
+            <a href="/logout" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="student-content">
+    <div class="content-header">
+        <div class="page-title">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <p>{% block page_subtitle %}Welcome to your student portal{% endblock %}</p>
+        </div>
+        
+        <div class="user-profile">
+            <div class="user-avatar">
+                {{ session.get("full_name", "U")[0] }}
+            </div>
+            <div class="user-info">
+                <h3>{{ session.get("full_name", "Student") }}</h3>
+                <p>{{ session.get("index_number", "No ID") }}</p>
+            </div>
+        </div>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+</div>
+
+<script>
+// JavaScript to update unread message count
+document.addEventListener('DOMContentLoaded', function() {
+    updateUnreadMessageCount();
+    // Update every 30 seconds
+    setInterval(updateUnreadMessageCount, 30000);
+});
+
+async function updateUnreadMessageCount() {
+    try {
+        const response = await fetch('/api/chat/unread-count');
+        const data = await response.json();
+        
+        if (data.count > 0) {
+            const badge = document.getElementById('unreadMessagesCount');
+            if (badge) {
+                badge.textContent = data.count > 99 ? '99+' : data.count;
+                badge.style.display = 'flex';
+            }
+            
+            // Update browser tab title if not on chat page
+            if (!window.location.pathname.includes('/student/chat')) {
+                const originalTitle = document.title.replace(/^\(\d+\) /, '');
+                document.title = `(${data.count}) ${originalTitle}`;
+            }
+        } else {
+            const badge = document.getElementById('unreadMessagesCount');
+            if (badge) {
+                badge.style.display = 'none';
+            }
+            
+            // Reset browser tab title
+            if (!window.location.pathname.includes('/student/chat')) {
+                document.title = document.title.replace(/^\(\d+\) /, '');
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching unread count:', error);
+    }
+}
+
+// Add notification sound for new messages
+function playNotificationSound() {
+    const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+    audio.play().catch(e => console.log('Audio play failed:', e));
+}
+
+// Listen for browser notifications (if supported)
+if ('Notification' in window && Notification.permission === 'granted') {
+    // You can show notifications when new messages arrive
+    // This would require WebSocket or polling implementation
+}
+
+// Request notification permission on page load
+if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+            console.log('Notification permission granted');
+        }
+    });
+}
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

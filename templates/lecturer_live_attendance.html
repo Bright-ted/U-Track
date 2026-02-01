@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="live-attendance-container">
+    <!-- Session Header -->
+    <div class="session-header">
+        <div class="session-info">
+            <h2>
+                <i class="fas fa-qrcode"></i> Live Attendance - {{ course.course_code }}
+            </h2>
+            <p class="session-subtitle">
+                <i class="fas fa-clock"></i> Session Active
+                <span class="session-timer" id="sessionTimer">--:--</span>
+            </p>
+        </div>
+        <div class="session-controls">
+            <a href="/lecturer/courses/{{ course.id }}/end-session" 
+               class="btn btn-danger end-session-btn"
+               onclick="return confirm('Are you sure you want to end this session?')">
+                <i class="fas fa-stop-circle"></i> End Session
+            </a>
+            <a href="/lecturer/courses/{{ course.id }}/sessions" 
+               class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Sessions
+            </a>
+        </div>
+    </div>
+
+    <!-- QR Code Display -->
+    <div class="qr-section">
+        <div class="qr-container">
+            <h3><i class="fas fa-qrcode"></i> Session QR Code</h3>
+            <p class="qr-instructions">Students scan this code to mark attendance</p>
+            
+            <div class="qr-code-wrapper">
+                <div id="qrCodeContainer"></div>
+                <div class="qr-meta">
+                    <p><i class="fas fa-sync-alt"></i> <span id="qrRefresh">Refreshes in 30s</span></p>
+                    <p><i class="fas fa-users"></i> <span id="totalAttendees">0</span> students attended</p>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="refreshQR()">
+                <i class="fas fa-sync"></i> Generate New QR
+            </button>
+        </div>
+        
+        <!-- Live Attendance Feed -->
+        <div class="attendance-feed">
+            <h3><i class="fas fa-user-check"></i> Recent Check-ins</h3>
+            <div class="feed-container" id="attendanceFeed">
+                <div class="empty-feed">
+                    <i class="fas fa-user-clock"></i>
+                    <p>Waiting for students to check in...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .live-attendance-container {
+        padding: 20px;
+    }
+    
+    .session-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .session-info h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .session-subtitle {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .session-timer {
+        background: rgba(255,255,255,0.2);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-family: monospace;
+    }
+    
+    .session-controls {
+        display: flex;
+        gap: 15px;
+    }
+    
+    .end-session-btn {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        border: none;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .end-session-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255,107,107,0.4);
+        color: white;
+    }
+    
+    .qr-section {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .qr-container {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .qr-container h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .qr-instructions {
+        color: #666;
+        margin-bottom: 20px;
+    }
+    
+    .qr-code-wrapper {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    #qrCodeContainer {
+        margin: 0 auto 20px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    
+    .qr-meta {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 15px;
+        color: #666;
+    }
+    
+    .qr-meta i {
+        margin-right: 8px;
+    }
+    
+    .attendance-feed {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .attendance-feed h3 {
+        margin: 0 0 20px 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .feed-container {
+        min-height: 400px;
+    }
+    
+    .empty-feed {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    
+    .empty-feed i {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #545b62;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    let qrRefreshTimer = null;
+    let attendancePollInterval = null;
+    let qrSeed = null;
+    let sessionStartTime = null;
+    
+    function loadQRCode() {
+        // Fetch the current QR seed from the server
+        fetch(`/lecturer/courses/{{ course.id }}/qr`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.qr_seed) {
+                    qrSeed = data.qr_seed;
+                    
+                    // Clear previous QR code
+                    document.getElementById('qrCodeContainer').innerHTML = '';
+                    
+                    // Generate new QR code
+                    new QRCode(document.getElementById("qrCodeContainer"), {
+                        text: qrSeed,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                    
+                    startQRRefreshTimer();
+                }
+            })
+            .catch(error => console.error('Error loading QR:', error));
+    }
+    
+    function startQRRefreshTimer() {
+        let seconds = 30;
+        
+        if (qrRefreshTimer) {
+            clearInterval(qrRefreshTimer);
+        }
+        
+        qrRefreshTimer = setInterval(() => {
+            seconds--;
+            document.getElementById('qrRefresh').textContent = `Refreshes in ${seconds}s`;
+            
+            if (seconds <= 0) {
+                loadQRCode();
+            }
+        }, 1000);
+    }
+    
+    function refreshQR() {
+        // Manually generate new QR
+        fetch(`/lecturer/courses/{{ course.id }}/generate-qr`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.qr_hash) {
+                qrSeed = data.qr_hash;
+                loadQRCode();
+            }
+        })
+        .catch(error => console.error('Error refreshing QR:', error));
+    }
+    
+    function pollAttendance() {
+        fetch(`/lecturer/courses/{{ course.id }}/live-attendance/poll`)
+            .then(response => response.json())
+            .then(records => {
+                updateAttendanceFeed(records);
+                document.getElementById('totalAttendees').textContent = records.length;
+            })
+            .catch(error => console.error('Error polling attendance:', error));
+    }
+    
+    function updateAttendanceFeed(records) {
+        const feedContainer = document.getElementById('attendanceFeed');
+        
+        if (records.length === 0) {
+            feedContainer.innerHTML = `
+                <div class="empty-feed">
+                    <i class="fas fa-user-clock"></i>
+                    <p>Waiting for students to check in...</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="attendance-list">';
+        
+        records.forEach(record => {
+            const time = new Date(record.scanned_at).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            html += `
+                <div class="attendance-item">
+                    <div class="student-avatar">
+                        ${record.students?.users?.profile_photo_url ? 
+                            `<img src="${record.students.users.profile_photo_url}" alt="Profile">` : 
+                            `<i class="fas fa-user"></i>`}
+                    </div>
+                    <div class="student-info">
+                        <h4>${record.students?.users?.full_name || 'Unknown Student'}</h4>
+                        <p>${record.students?.index_number || ''}</p>
+                    </div>
+                    <div class="check-in-time">
+                        <span class="time">${time}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        feedContainer.innerHTML = html;
+    }
+    
+    function updateSessionTimer() {
+        if (!sessionStartTime) return;
+        
+        const now = new Date();
+        const diff = Math.floor((now - sessionStartTime) / 1000);
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        const seconds = diff % 60;
+        
+        document.getElementById('sessionTimer').textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load QR code
+        loadQRCode();
+        
+        // Start polling for attendance updates every 3 seconds
+        pollAttendance();
+        attendancePollInterval = setInterval(pollAttendance, 3000);
+        
+        // Set session start time and update timer every second
+        sessionStartTime = new Date();
+        setInterval(updateSessionTimer, 1000);
+        
+        // Stop polling when page is hidden (optional optimization)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                if (attendancePollInterval) {
+                    clearInterval(attendancePollInterval);
+                }
+            } else {
+                attendancePollInterval = setInterval(pollAttendance, 3000);
+            }
+        });
+    });
+    
+    // Clean up intervals when leaving page
+    window.addEventListener('beforeunload', function() {
+        if (qrRefreshTimer) clearInterval(qrRefreshTimer);
+        if (attendancePollInterval) clearInterval(attendancePollInterval);
+    });
+</script>
+
+<style>
+    .attendance-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .attendance-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #42b883;
+        transition: all 0.3s ease;
+    }
+    
+    .attendance-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+    
+    .student-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        margin-right: 15px;
+        overflow: hidden;
+    }
+    
+    .student-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .student-info {
+        flex: 1;
+    }
+    
+    .student-info h4 {
+        margin: 0;
+        color: #333;
+        font-size: 1rem;
+    }
+    
+    .student-info p {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 0.85rem;
+    }
+    
+    .check-in-time {
+        text-align: right;
+    }
+    
+    .check-in-time .time {
+        background: #e3f2fd;
+        color: #1976d2;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}

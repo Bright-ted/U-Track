@@ -1,0 +1,24 @@
+{% extends "base_student.html" %}
+
+{% block content %}
+<h3>Attendance History</h3>
+
+<table border="1" cellpadding="6">
+<tr>
+    <th>Course</th>
+    <th>Date</th>
+    <th>Status</th>
+</tr>
+
+{% for r in records %}
+<tr>
+    <td>
+        {{ r.class_sessions.courses.course_code }} -
+        {{ r.class_sessions.courses.course_title }}
+    </td>
+    <td>{{ r.scanned_at }}</td>
+    <td>{{ r.status }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

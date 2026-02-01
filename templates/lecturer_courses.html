@@ -1,0 +1,795 @@
+{% extends "base.html" %}
+
+{% block title %}My Courses{% endblock %}
+
+{% block header %}
+    <h1>My Courses</h1> 
+{% endblock %}
+
+{% block content %}
+<div class="courses-container">
+    <!-- Header with Stats -->
+    <div class="header-section">
+        <div class="header-content">
+            <div>
+                <h1>My Courses</h1>
+                <p class="subtitle">Manage your courses and student attendance</p>
+            </div>
+            <a href="/lecturer/courses/create" class="primary-button">
+                <i class="fas fa-plus-circle"></i> Create New Course
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards with Real Data -->
+    <div class="stats-grid">
+        <div class="stats-card">
+            <div class="stats-icon primary">
+                <i class="fas fa-book-open"></i>
+            </div>
+            <div class="stats-content">
+                <h3>{{ courses|length }}</h3>
+                <p>Total Courses</p>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-icon success">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="totalStudents">{{ total_students }}</h3>
+                <p>Total Students</p>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-icon warning">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="activeSessions">{{ active_sessions_count }}</h3>
+                <p>Active Sessions</p>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-icon info">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stats-content">
+                <h3 id="attendanceRate">{{ avg_attendance }}</h3>
+                <p>Avg Attendance</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Grid with Real Data -->
+    <div class="courses-grid" id="coursesGrid">
+        {% if courses %}
+            {% for course in courses %}
+            <div class="course-card" data-id="{{ course.id }}">
+                <div class="course-card-header">
+                    <div class="course-header-left">
+                        <span class="course-code">{{ course.course_code }}</span>
+                        <span class="badge">Sem {{ course.semester }}</span>
+                    </div>
+                    <button class="course-menu-btn">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <div class="course-menu-dropdown">
+                        <a href="#" class="menu-item" onclick="editCourse('{{ course.id }}')">
+                            <i class="fas fa-edit"></i> Edit Course
+                        </a>
+                        <a href="#" class="menu-item" onclick="exportCourseData('{{ course.id }}')">
+                            <i class="fas fa-download"></i> Export Data
+                        </a>
+                        <div class="menu-divider"></div>
+                        <a href="#" class="menu-item danger" onclick="deleteCourse('{{ course.id }}')">
+                            <i class="fas fa-trash"></i> Delete Course
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="course-card-body">
+                    <h4 class="course-title">{{ course.course_title }}</h4>
+                    <p class="course-meta">
+                        <i class="fas fa-calendar"></i> {{ course.academic_year }} |
+                        <i class="fas fa-user-tie"></i> {{ current_user.full_name }}
+                    </p>
+                    
+                    <div class="course-stats">
+                        <div class="course-stat">
+                            <div class="stat-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value student-count">{{ course.student_count }}</span>
+                                <span class="stat-label">Students</span>
+                            </div>
+                        </div>
+                        
+                        <div class="course-stat">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value sessions-count">{{ course.session_count }}</span>
+                                <span class="stat-label">Sessions</span>
+                            </div>
+                        </div>
+                        
+                        <div class="course-stat">
+                            <div class="stat-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stat-info">
+                                <span class="stat-value attendance-percent">{{ course.attendance_percent }}</span>
+                                <span class="stat-label">Attendance</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="course-card-actions">
+                    <a href="/lecturer/courses/{{ course.id }}/sessions" 
+                       class="action-btn primary" title="Take Attendance">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Sessions</span>
+                    </a>
+                    <a href="/lecturer/courses/{{ course.id }}/schedule" 
+                       class="action-btn info" title="Schedule">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Schedule</span>
+                    </a>
+                    <a href="/lecturer/courses/{{ course.id }}/students" 
+                       class="action-btn success" title="Students">
+                        <i class="fas fa-users"></i>
+                        <span>Students</span>
+                    </a>
+                    <a href="/lecturer/courses/{{ course.id }}/attendance" 
+                       class="action-btn warning" title="Attendance Records">
+                        <i class="fas fa-list"></i>
+                        <span>Records</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <h3>No Courses Yet</h3>
+                <p>Create your first course to start managing attendance.</p>
+                <a href="/lecturer/courses/create" class="primary-button">
+                    <i class="fas fa-plus-circle"></i> Create Your First Course
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .courses-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0;
+    }
+    
+    .header-section {
+        margin-bottom: 30px;
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0, 35, 68, 0.08);
+    }
+    
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+    
+    .header-content h1 {
+        font-size: 32px;
+        color: #003366;
+        margin: 0 0 8px 0;
+        font-weight: 700;
+    }
+    
+    .subtitle {
+        color: #666;
+        font-size: 16px;
+        margin: 0;
+    }
+    
+    .primary-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #003366 0%, #002244 100%);
+        color: white;
+        padding: 14px 28px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .primary-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 51, 102, 0.2);
+        background: linear-gradient(135deg, #004488 0%, #003366 100%);
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+    
+    .stats-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 4px 12px rgba(0, 35, 68, 0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #eef2f7;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0, 35, 68, 0.12);
+    }
+    
+    .stats-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .stats-icon.primary {
+        background: linear-gradient(135deg, #003366 0%, #4d88ff 100%);
+    }
+    
+    .stats-icon.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .stats-icon.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .stats-icon.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .stats-content h3 {
+        margin: 0;
+        font-size: 28px;
+        color: #1e293b;
+        font-weight: 700;
+    }
+    
+    .stats-content p {
+        margin: 5px 0 0 0;
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    
+    /* Courses Grid */
+    .courses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+        gap: 24px;
+    }
+    
+    .course-card {
+        background: white;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 35, 68, 0.08);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #eef2f7;
+    }
+    
+    .course-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 32px rgba(0, 35, 68, 0.12);
+    }
+    
+    .course-card-header {
+        background: linear-gradient(135deg, #003366 0%, #002244 100%);
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+    }
+    
+    .course-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .course-code {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    }
+    
+    .badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+    }
+    
+    .course-menu-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .course-menu-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .course-menu-dropdown {
+        position: absolute;
+        top: 60px;
+        right: 24px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 35, 68, 0.15);
+        padding: 8px 0;
+        min-width: 180px;
+        display: none;
+        z-index: 100;
+    }
+    
+    .course-menu-btn:hover + .course-menu-dropdown,
+    .course-menu-dropdown:hover {
+        display: block;
+    }
+    
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        color: #475569;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.2s ease;
+    }
+    
+    .menu-item:hover {
+        background: #f8fafc;
+        color: #003366;
+    }
+    
+    .menu-item.danger {
+        color: #ef4444;
+    }
+    
+    .menu-item.danger:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    
+    .menu-divider {
+        height: 1px;
+        background: #e2e8f0;
+        margin: 8px 0;
+    }
+    
+    .course-card-body {
+        padding: 24px;
+        flex: 1;
+    }
+    
+    .course-title {
+        margin: 0 0 12px 0;
+        color: #1e293b;
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+    
+    .course-meta {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    
+    .course-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 24px;
+    }
+    
+    .course-stat {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8fafc;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .course-stat:hover {
+        background: #f1f5f9;
+        transform: translateY(-2px);
+    }
+    
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        background: #e6f0ff;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #003366;
+        font-size: 14px;
+    }
+    
+    .stat-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+    }
+    
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+    
+    .course-card-actions {
+        padding: 20px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .action-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+        gap: 6px;
+        transition: all 0.3s ease;
+    }
+    
+    .action-btn i {
+        font-size: 16px;
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(135deg, #003366 0%, #4d88ff 100%);
+    }
+    
+    .action-btn.info {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    .action-btn.success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+    
+    .action-btn.warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 80px 40px;
+        background: white;
+        border-radius: 16px;
+        border: 2px dashed #e2e8f0;
+    }
+    
+    .empty-state-icon {
+        width: 80px;
+        height: 80px;
+        background: #f8fafc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px;
+        color: #94a3b8;
+        font-size: 32px;
+    }
+    
+    .empty-state h3 {
+        margin: 0 0 12px 0;
+        color: #1e293b;
+        font-size: 24px;
+        font-weight: 600;
+    }
+    
+    .empty-state p {
+        color: #64748b;
+        margin-bottom: 24px;
+        font-size: 16px;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .course-card {
+        animation: fadeInUp 0.6s ease-out forwards;
+        animation-delay: calc(var(--item-index) * 0.1s);
+        opacity: 0;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add index for staggered animations
+        document.querySelectorAll('.course-card').forEach((card, index) => {
+            card.style.setProperty('--item-index', index);
+        });
+        
+        // Setup course card interactions
+        setupCourseCards();
+        
+        // Setup dropdown menus
+        setupDropdowns();
+        
+        // Initialize animations
+        initializeAnimations();
+        
+        // Check for active sessions periodically (every 30 seconds)
+        setInterval(updateActiveSessions, 30000);
+    });
+    
+    function initializeAnimations() {
+        // Animate stats cards
+        document.querySelectorAll('.stats-card').forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`;
+            card.classList.add('fade-in');
+        });
+        
+        // Animate numbers in stats cards
+        animateNumbers();
+    }
+    
+    function setupCourseCards() {
+        document.querySelectorAll('.course-card').forEach(card => {
+            const courseId = card.dataset.id;
+            
+            // Click handler for entire card (except buttons)
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('.action-btn') && 
+                    !e.target.closest('.course-menu-btn') &&
+                    !e.target.closest('.menu-item')) {
+                    window.location.href = `/lecturer/courses/${courseId}/sessions`;
+                }
+            });
+            
+            // Hover effects
+            card.addEventListener('mouseenter', function() {
+                this.style.zIndex = '10';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.zIndex = '1';
+            });
+        });
+    }
+    
+    function setupDropdowns() {
+        document.querySelectorAll('.course-menu-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.nextElementSibling;
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+        
+        // Close dropdowns when clicking elsewhere
+        document.addEventListener('click', function() {
+            document.querySelectorAll('.course-menu-dropdown').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+        });
+    }
+    
+    function animateNumbers() {
+        // Animate stat numbers
+        document.querySelectorAll('.stats-content h3').forEach(stat => {
+            const text = stat.textContent;
+            if (text.includes('%')) {
+                const value = parseFloat(text);
+                if (!isNaN(value)) {
+                    animateNumber(stat, 0, value, 1000, '%');
+                }
+            } else {
+                const value = parseInt(text);
+                if (!isNaN(value)) {
+                    animateNumber(stat, 0, value, 1000);
+                }
+            }
+        });
+    }
+    
+    function animateNumber(element, start, end, duration, suffix = '') {
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            const currentValue = Math.floor(progress * (end - start) + start);
+            
+            element.textContent = currentValue + suffix;
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+    
+    async function updateActiveSessions() {
+        try {
+            const response = await fetch('/api/active-sessions');
+            const data = await response.json();
+            const activeSessionsElement = document.getElementById('activeSessions');
+            if (activeSessionsElement) {
+                const current = parseInt(activeSessionsElement.textContent);
+                const newCount = data.count || 0;
+                if (current !== newCount) {
+                    animateNumber(activeSessionsElement, current, newCount, 500);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating active sessions:', error);
+        }
+    }
+    
+    // Course management functions
+    function editCourse(courseId) {
+        if (confirm('Edit this course?')) {
+            // Redirect to edit page or show modal
+            window.location.href = `/lecturer/courses/${courseId}/edit`;
+        }
+    }
+    
+    function exportCourseData(courseId) {
+        // Show loading
+        const button = event.target.closest('.menu-item');
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+        
+        // Make API call to export data
+        fetch(`/api/courses/${courseId}/export`)
+            .then(response => response.blob())
+            .then(blob => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `course-${courseId}-data.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Restore button
+                button.innerHTML = originalText;
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                alert('Failed to export data. Please try again.');
+                button.innerHTML = originalText;
+            });
+    }
+    
+    function deleteCourse(courseId) {
+        if (confirm('Are you sure you want to delete this course? This action cannot be undone.')) {
+            // Show loading
+            const button = event.target.closest('.menu-item');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            // Make API call to delete
+            fetch(`/api/courses/${courseId}`, {
+                method: 'DELETE',
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove course card from DOM
+                    const card = document.querySelector(`.course-card[data-id="${courseId}"]`);
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.8)';
+                        setTimeout(() => card.remove(), 300);
+                    }
+                } else {
+                    alert('Failed to delete course. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                alert('Failed to delete course. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+            });
+        }
+    }
+</script>
+{% endblock %}

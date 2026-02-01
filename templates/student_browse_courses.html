@@ -1,0 +1,405 @@
+{% extends "base_student.html" %}
+
+{% block title %}Browse Courses{% endblock %}
+{% block page_title %}Browse Courses{% endblock %}
+{% block page_subtitle %}Find and register for available courses{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Search and Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <form method="get" action="/student/browse-courses" class="search-form">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                            <input type="text" 
+                                   name="q" 
+                                   class="form-control" 
+                                   placeholder="Search by course code or title..."
+                                   value="{{ search_query }}">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary">
+                                    Search
+                                </button>
+                                {% if search_query %}
+                                <a href="/student/browse-courses" class="btn btn-outline-secondary">
+                                    Clear
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4 text-right">
+                    <div class="stats-badge">
+                        <i class="fas fa-book"></i>
+                        <span>{{ courses|length }} Courses Available</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses List -->
+    {% if courses %}
+    <div class="row">
+        {% for course in courses %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card course-listing-card {% if course.is_registered %}registered-course{% endif %}">
+                <div class="course-status">
+                    {% if course.is_registered %}
+                    <span class="badge badge-success">
+                        <i class="fas fa-check-circle"></i> Registered
+                    </span>
+                    {% else %}
+                    <span class="badge badge-info">
+                        <i class="fas fa-book-open"></i> Available
+                    </span>
+                    {% endif %}
+                </div>
+                
+                <div class="course-card-header">
+                    <h4 class="course-code">
+                        <i class="fas fa-hashtag"></i>
+                        {{ course.course_code }}
+                    </h4>
+                    <h5 class="course-title">{{ course.course_title }}</h5>
+                </div>
+                
+                <div class="course-card-body">
+                    <div class="course-details">
+                        <div class="detail-row">
+                            <i class="fas fa-calendar-alt"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Academic Year</span>
+                                <span class="detail-value">{{ course.academic_year }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <i class="fas fa-layer-group"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Semester</span>
+                                <span class="detail-value">Semester {{ course.semester }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                            <div class="detail-content">
+                                <span class="detail-label">Lecturer</span>
+                                <span class="detail-value">
+                                    {% if course.lecturers and course.lecturers.users %}
+                                        {{ course.lecturers.users.full_name }}
+                                    {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="course-card-footer">
+                    {% if course.is_registered %}
+                    <div class="registered-actions">
+                        <button class="btn btn-success btn-block" disabled>
+                            <i class="fas fa-check"></i> Already Registered
+                        </button>
+                        <a href="/student/my-courses" class="btn btn-outline-info btn-block mt-2">
+                            <i class="fas fa-eye"></i> View in My Courses
+                        </a>
+                    </div>
+                    {% else %}
+                    <form method="post" action="/student/register-course/{{ course.id }}"
+                          onsubmit="return confirmRegister('{{ course.course_code }}')">
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-plus-circle"></i> Register for Course
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="card empty-state-card">
+        <div class="empty-state-content">
+            <div class="empty-state-icon">
+                <i class="fas fa-search fa-4x"></i>
+            </div>
+            <h3>No Courses Found</h3>
+            {% if search_query %}
+            <p class="text-muted">No courses match your search for "{{ search_query }}"</p>
+            {% else %}
+            <p class="text-muted">No courses are available for registration at the moment.</p>
+            {% endif %}
+            <div class="empty-state-actions">
+                {% if search_query %}
+                <a href="/student/browse-courses" class="btn btn-primary">
+                    <i class="fas fa-times"></i> Clear Search
+                </a>
+                {% endif %}
+                <a href="/student/dashboard" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .container-fluid {
+        padding: 0;
+    }
+    
+    .search-form .input-group {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .search-form .form-control {
+        border: 1px solid #eaeaea;
+        padding: 12px 15px;
+        font-size: 1rem;
+    }
+    
+    .search-form .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .stats-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fa;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    .stats-badge i {
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+    
+    .course-listing-card {
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .course-listing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    }
+    
+    .registered-course {
+        border-left: 4px solid #42b883;
+    }
+    
+    .course-status {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #42b883 0%, #347357 100%);
+        color: white;
+        padding: 6px 12px;
+        font-weight: 500;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #29b6f6 0%, #0288d1 100%);
+        color: white;
+        padding: 6px 12px;
+        font-weight: 500;
+    }
+    
+    .course-card-header {
+        padding: 25px 25px 15px 25px;
+        border-bottom: 1px solid #eaeaea;
+    }
+    
+    .course-code {
+        font-size: 1.4rem;
+        color: #1a237e;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .course-title {
+        font-size: 1.1rem;
+        color: #333;
+        line-height: 1.4;
+        margin: 0;
+    }
+    
+    .course-card-body {
+        padding: 20px 25px;
+        flex-grow: 1;
+    }
+    
+    .course-details {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .detail-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .detail-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .detail-row i {
+        width: 30px;
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+    
+    .detail-content {
+        flex: 1;
+    }
+    
+    .detail-label {
+        display: block;
+        color: #666;
+        font-size: 0.85rem;
+        margin-bottom: 3px;
+    }
+    
+    .detail-value {
+        display: block;
+        color: #333;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+    
+    .course-card-footer {
+        padding: 20px 25px;
+        border-top: 1px solid #eaeaea;
+        margin-top: auto;
+    }
+    
+    .btn-block {
+        width: 100%;
+        padding: 12px;
+        font-weight: 500;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+        background: linear-gradient(135deg, #42b883 0%, #347357 100%);
+        border: none;
+        color: white;
+    }
+    
+    .btn-success:disabled {
+        opacity: 0.8;
+        cursor: not-allowed;
+    }
+    
+    .btn-outline-info {
+        color: #29b6f6;
+        border-color: #29b6f6;
+    }
+    
+    .btn-outline-info:hover {
+        background: #29b6f6;
+        color: white;
+    }
+    
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+    }
+    
+    .btn-outline-secondary:hover {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .empty-state-card {
+        text-align: center;
+        padding: 60px 40px;
+        border: 2px dashed #dee2e6;
+        background: #f8f9fa;
+    }
+    
+    .empty-state-icon {
+        color: #adb5bd;
+        margin-bottom: 25px;
+    }
+    
+    .empty-state-card h3 {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    
+    .empty-state-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+    }
+    
+    .mt-2 {
+        margin-top: 10px;
+    }
+    
+    .mb-4 {
+        margin-bottom: 30px;
+    }
+    
+    .text-muted {
+        color: #6c757d !important;
+    }
+</style>
+
+<script>
+    function confirmRegister(courseCode) {
+        return confirm(`Are you sure you want to register for ${courseCode}?\n\nYou can unregister later if needed.`);
+    }
+    
+    // Search input focus
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.querySelector('input[name="q"]');
+        if (searchInput) {
+            searchInput.focus();
+            searchInput.select();
+        }
+    });
+</script>
+{% endblock %}

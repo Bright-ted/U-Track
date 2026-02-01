@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h3>{{ course.course_code }} Manual Attendance</h3>
+
+<form method="post">
+<table border="1" cellpadding="6">
+<tr>
+    <th>Index Number</th>
+    <th>Name</th>
+    <th>Status</th>
+</tr>
+
+{% for s in students %}
+<tr>
+    <td>{{ s.students.index_number }}</td>
+    <td>{{ s.students.users.full_name }}</td>
+    <img src="{{ s.students.users.profile_photo_url }}">
+
+
+    <td>
+        <select name="student_{{ s.student_id }}">
+            <option value="present">Present</option>
+            <option value="absent">Absent</option>
+            <option value="excused">Excused</option>
+        </select>
+    </td>
+</tr>
+{% endfor %}
+</table>
+
+<button type="submit">Save Attendance</button>
+</form>
+{% endblock %}

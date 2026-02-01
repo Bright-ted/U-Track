@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Lecturer Login{% endblock %}
+
+{% block content %}
+<div class="hero-section fade-in">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="icon-header" style="background: #f3e5f5;">
+                <i data-feather="key" class="header-icon" style="color: #7b1fa2;"></i>
+            </div>
+            <h2>Lecturer Portal</h2>
+            <p class="subtitle">Faculty secure access</p>
+
+            <form id="loginForm" class="login-form">
+                
+                <div class="form-group">
+                    <label for="identifier">Email or Staff ID</label>
+                    <div class="input-wrapper">
+                        <i data-feather="user" class="field-icon"></i>
+                        <input type="text" id="identifier" name="identifier" placeholder="e.g. UCC/SEN/005" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i data-feather="lock" class="field-icon"></i>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <div id="feedbackMessage" class="feedback-message" style="display: none;"></div>
+
+                <button type="submit" id="loginBtn" class="btn-primary" style="background-color: #7b1fa2;">
+                    <span class="btn-text">Login</span>
+                    <div class="loader" style="display: none;"></div>
+                </button>
+            </form>
+
+            <div class="form-footer">
+                <p>New lecturer? <a href="/register/lecturer">Create account</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/login_lecturer.js') }}"></script>
+
+<style>
+    /* Specific styles for login */
+    .login-container { display: flex; justify-content: center; padding-top: 2rem; }
+    .login-card { background: var(--white); padding: 2.5rem; border-radius: 12px; box-shadow: var(--shadow); width: 100%; max-width: 400px; text-align: center; }
+    .icon-header { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto; }
+    .form-group { margin-bottom: 1.2rem; text-align: left; }
+    .input-wrapper { position: relative; }
+    .input-wrapper input { width: 100%; padding: 12px 12px 12px 40px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+    .field-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 18px; color: #999; }
+    .btn-primary { width: 100%; padding: 12px; color: #fff; border: none; border-radius: 8px; cursor: pointer; display: flex; justify-content: center; align-items: center;}
+    .feedback-message { padding: 10px; border-radius: 6px; margin-bottom: 1rem; display: none; }
+    .feedback-message.error { background: #ffebee; color: #c62828; }
+    .feedback-message.success { background: #e8f5e9; color: #2e7d32; }
+    .loader { border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #fff; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+{% endblock %}
