@@ -307,6 +307,41 @@ def authenticate_user(identifier, password):
     
     return user
 
+# Add these helper functions to app.py after the existing imports
+
+def rotate_qr_seed(session_id):
+    """Generate a new QR seed for a session"""
+    try:
+        new_seed = str(uuid.uuid4())
+        
+        supabase.table("class_sessions").update({
+            "qr_seed": new_seed,
+            "qr_updated_at": datetime.now(timezone.utc).isoformat()
+        }).eq("id", session_id).execute()
+        
+        return new_seed
+    except Exception as e:
+        print(f"Error rotating QR seed: {e}")
+        return None
+
+def get_current_qr_seed(session_id):
+    """Get the current QR seed for a session"""
+    try:
+        resp = (
+            supabase
+            .table("class_sessions")
+            .select("qr_seed, qr_updated_at")
+            .eq("id", session_id)
+            .single()
+            .execute()
+        )
+        
+        if resp.data:
+            return resp.data["qr_seed"]
+        return None
+    except Exception as e:
+        print(f"Error getting QR seed: {e}")
+        return None
 
 def create_student_user(conn, email, password, full_name, index_number, programme, level, department):
     cursor = conn.cursor()
@@ -877,10 +912,72 @@ def lecturer_qr(course_id):
     if not active:
         return {"error": "No active session"}, 400
 
+    # Get current QR seed
+    current_seed = get_current_qr_seed(active["id"])
+    
+    if not current_seed:
+        # Generate initial QR seed if none exists
+        current_seed = rotate_qr_seed(active["id"])
+    
     return {
-        "qr_seed": active["qr_seed"]
+        "qr_seed": current_seed,
+        "session_id": active["id"],
+        "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
+@app.route("/lecturer/courses/<course_id>/qr-status")
+def qr_status(course_id):
+    if "user_id" not in session or session.get("role") != "lecturer":
+        return jsonify({"error": "unauthorized"}), 401
+    
+    active = get_active_session(course_id)
+    if not active:
+        return jsonify({"error": "No active session"}), 400
+    
+    # Get current QR info
+    resp = (
+        supabase
+        .table("class_sessions")
+        .select("qr_seed, qr_updated_at")
+        .eq("id", active["id"])
+        .single()
+        .execute()
+    )
+    
+    qr_data = resp.data if resp.data else {}
+    
+    return jsonify({
+        "current_qr": qr_data.get("qr_seed"),
+        "last_updated": qr_data.get("qr_updated_at"),
+        "needs_refresh": not qr_data.get("qr_seed")
+    })
+
+
+# Add this to track QR rotations for debugging
+@app.route("/lecturer/courses/<course_id>/qr-history")
+def qr_history(course_id):
+    if "user_id" not in session or session.get("role") != "lecturer":
+        return jsonify({"error": "unauthorized"}), 401
+    
+    active = get_active_session(course_id)
+    if not active:
+        return jsonify({"error": "No active session"}), 400
+    
+    # Get attendance records with timestamps
+    attendance_records = (
+        supabase
+        .table("attendance")
+        .select("scanned_at, students(users(full_name, index_number))")
+        .eq("session_id", active["id"])
+        .order("scanned_at", desc=True)
+        .execute()
+    )
+    
+    return jsonify({
+        "session_id": active["id"],
+        "qr_rotations": len(attendance_records.data) if attendance_records.data else 0,
+        "attendance_history": attendance_records.data if attendance_records.data else []
+    })
 
 # Fix the start_session function to match your schema
 @app.route("/lecturer/courses/<course_id>/start-session", methods=["POST"])
@@ -1214,11 +1311,11 @@ def attendance_scan():
     if not qr_seed:
         return jsonify({"error": "invalid_qr"}), 400
 
-    # Get the active session
+    # Get the active session with current QR seed
     session_row = (
         supabase
         .table("class_sessions")
-        .select("id, course_id, started_at, is_active")
+        .select("id, course_id, started_at, is_active, qr_seed")
         .eq("qr_seed", qr_seed)
         .eq("is_active", True)
         .single()
@@ -1229,14 +1326,18 @@ def attendance_scan():
     if not session_row:
         return jsonify({"error": "expired_or_invalid"}), 400
     
-    # Check session age
+    # Verify the QR seed matches exactly
+    if session_row.get("qr_seed") != qr_seed:
+        return jsonify({"error": "qr_expired"}), 400
+    
+    # Check session age (existing code remains)
     started_at = datetime.fromisoformat(
         session_row["started_at"].replace("Z", "+00:00")
     )
     now = datetime.now(timezone.utc)
     session_age = now - started_at
     
-    # Get course settings for late entry policy
+    # Get course settings for late entry policy (existing code remains)
     try:
         settings = (
             supabase
@@ -1254,7 +1355,7 @@ def attendance_scan():
         allow_late_entry = True
         late_entry_minutes = 5
     
-    # Check if student is too late
+    # Check if student is too late (existing code remains)
     late_entry_duration = timedelta(minutes=late_entry_minutes)
     if session_age > late_entry_duration and not allow_late_entry:
         return jsonify({
@@ -1262,7 +1363,7 @@ def attendance_scan():
             "message": f"Session closed for late entry. Maximum late entry: {late_entry_minutes} minutes."
         }), 400
     
-    # Check if student is registered for this course
+    # Check if student is registered for this course (existing code remains)
     registration_check = (
         supabase
         .table("course_registration")
@@ -1277,7 +1378,7 @@ def attendance_scan():
     if not registration_check:
         return jsonify({"error": "not_registered"}), 403
 
-    # Check if already attended this session
+    # Check if already attended this session (existing code remains)
     existing_attendance = (
         supabase
         .table("attendance")
@@ -1292,7 +1393,7 @@ def attendance_scan():
     if existing_attendance:
         return jsonify({"error": "already_scanned"}), 400
     
-    # Mark attendance status based on timing
+    # Mark attendance status based on timing (existing code remains)
     if session_age > timedelta(minutes=late_entry_minutes):
         status = "late"
         late_by = int((session_age - timedelta(minutes=late_entry_minutes)).total_seconds() / 60)
@@ -1300,7 +1401,7 @@ def attendance_scan():
         status = "present"
         late_by = 0
     
-    # Record attendance
+    # Record attendance (existing code remains)
     attendance_data = {
         "session_id": session_row["id"],
         "student_id": student_id,
@@ -1312,12 +1413,13 @@ def attendance_scan():
     
     supabase.table("attendance").insert(attendance_data).execute()
 
-    # Rotate QR seed for security
-    supabase.table("class_sessions").update({
-        "qr_seed": str(uuid.uuid4())
-    }).eq("id", session_row["id"]).execute()
+    # ROTATE QR SEED IMMEDIATELY AFTER SUCCESSFUL SCAN
+    new_qr_seed = rotate_qr_seed(session_row["id"])
+    
+    if not new_qr_seed:
+        return jsonify({"error": "qr_rotation_failed"}), 500
 
-    # Get student details for confirmation
+    # Get student details for confirmation (existing code remains)
     student = (
         supabase
         .table("students")
@@ -1337,7 +1439,8 @@ def attendance_scan():
         "course_id": session_row["course_id"],
         "status": status,
         "late_by": late_by,
-        "message": "Attendance marked successfully!" + 
+        "qr_rotated": True,  # Inform frontend that QR was rotated
+        "message": "Attendance marked successfully! QR code has been rotated." + 
                   (f" Marked as late ({late_by} minutes late)." if late_by > 0 else "")
     })
 
