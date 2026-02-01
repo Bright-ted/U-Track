@@ -35,13 +35,14 @@
             <div class="qr-code-wrapper">
                 <div id="qrCodeContainer"></div>
                 <div class="qr-meta">
-                    <p><i class="fas fa-sync-alt"></i> <span id="qrRefresh">Refreshes in 30s</span></p>
+                    <p><i class="fas fa-sync-alt"></i> <span id="qrRefreshStatus">Active - Rotates on scan</span></p>
                     <p><i class="fas fa-users"></i> <span id="totalAttendees">0</span> students attended</p>
+                    <p><i class="fas fa-history"></i> <span id="lastScanTime">No scans yet</span></p>
                 </div>
             </div>
             
-            <button class="btn btn-primary" onclick="refreshQR()">
-                <i class="fas fa-sync"></i> Generate New QR
+            <button class="btn btn-primary" onclick="manualRefreshQR()" id="manualRefreshBtn">
+                <i class="fas fa-sync"></i> Manually Refresh QR
             </button>
         </div>
         
@@ -166,14 +167,18 @@
     
     .qr-meta {
         display: flex;
-        justify-content: center;
-        gap: 30px;
+        flex-direction: column;
+        gap: 10px;
         margin-top: 15px;
         color: #666;
+        align-items: center;
     }
     
-    .qr-meta i {
-        margin-right: 8px;
+    .qr-meta p {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
     
     .attendance-feed {
@@ -241,173 +246,7 @@
     .btn-secondary:hover {
         background: #545b62;
     }
-</style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script>
-    let qrRefreshTimer = null;
-    let attendancePollInterval = null;
-    let qrSeed = null;
-    let sessionStartTime = null;
     
-    function loadQRCode() {
-        // Fetch the current QR seed from the server
-        fetch(`/lecturer/courses/{{ course.id }}/qr`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.qr_seed) {
-                    qrSeed = data.qr_seed;
-                    
-                    // Clear previous QR code
-                    document.getElementById('qrCodeContainer').innerHTML = '';
-                    
-                    // Generate new QR code
-                    new QRCode(document.getElementById("qrCodeContainer"), {
-                        text: qrSeed,
-                        width: 200,
-                        height: 200,
-                        colorDark : "#000000",
-                        colorLight : "#ffffff",
-                        correctLevel : QRCode.CorrectLevel.H
-                    });
-                    
-                    startQRRefreshTimer();
-                }
-            })
-            .catch(error => console.error('Error loading QR:', error));
-    }
-    
-    function startQRRefreshTimer() {
-        let seconds = 30;
-        
-        if (qrRefreshTimer) {
-            clearInterval(qrRefreshTimer);
-        }
-        
-        qrRefreshTimer = setInterval(() => {
-            seconds--;
-            document.getElementById('qrRefresh').textContent = `Refreshes in ${seconds}s`;
-            
-            if (seconds <= 0) {
-                loadQRCode();
-            }
-        }, 1000);
-    }
-    
-    function refreshQR() {
-        // Manually generate new QR
-        fetch(`/lecturer/courses/{{ course.id }}/generate-qr`, {
-            method: 'POST'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.qr_hash) {
-                qrSeed = data.qr_hash;
-                loadQRCode();
-            }
-        })
-        .catch(error => console.error('Error refreshing QR:', error));
-    }
-    
-    function pollAttendance() {
-        fetch(`/lecturer/courses/{{ course.id }}/live-attendance/poll`)
-            .then(response => response.json())
-            .then(records => {
-                updateAttendanceFeed(records);
-                document.getElementById('totalAttendees').textContent = records.length;
-            })
-            .catch(error => console.error('Error polling attendance:', error));
-    }
-    
-    function updateAttendanceFeed(records) {
-        const feedContainer = document.getElementById('attendanceFeed');
-        
-        if (records.length === 0) {
-            feedContainer.innerHTML = `
-                <div class="empty-feed">
-                    <i class="fas fa-user-clock"></i>
-                    <p>Waiting for students to check in...</p>
-                </div>
-            `;
-            return;
-        }
-        
-        let html = '<div class="attendance-list">';
-        
-        records.forEach(record => {
-            const time = new Date(record.scanned_at).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            });
-            
-            html += `
-                <div class="attendance-item">
-                    <div class="student-avatar">
-                        ${record.students?.users?.profile_photo_url ? 
-                            `<img src="${record.students.users.profile_photo_url}" alt="Profile">` : 
-                            `<i class="fas fa-user"></i>`}
-                    </div>
-                    <div class="student-info">
-                        <h4>${record.students?.users?.full_name || 'Unknown Student'}</h4>
-                        <p>${record.students?.index_number || ''}</p>
-                    </div>
-                    <div class="check-in-time">
-                        <span class="time">${time}</span>
-                    </div>
-                </div>
-            `;
-        });
-        
-        html += '</div>';
-        feedContainer.innerHTML = html;
-    }
-    
-    function updateSessionTimer() {
-        if (!sessionStartTime) return;
-        
-        const now = new Date();
-        const diff = Math.floor((now - sessionStartTime) / 1000);
-        const hours = Math.floor(diff / 3600);
-        const minutes = Math.floor((diff % 3600) / 60);
-        const seconds = diff % 60;
-        
-        document.getElementById('sessionTimer').textContent = 
-            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        // Load QR code
-        loadQRCode();
-        
-        // Start polling for attendance updates every 3 seconds
-        pollAttendance();
-        attendancePollInterval = setInterval(pollAttendance, 3000);
-        
-        // Set session start time and update timer every second
-        sessionStartTime = new Date();
-        setInterval(updateSessionTimer, 1000);
-        
-        // Stop polling when page is hidden (optional optimization)
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                if (attendancePollInterval) {
-                    clearInterval(attendancePollInterval);
-                }
-            } else {
-                attendancePollInterval = setInterval(pollAttendance, 3000);
-            }
-        });
-    });
-    
-    // Clean up intervals when leaving page
-    window.addEventListener('beforeunload', function() {
-        if (qrRefreshTimer) clearInterval(qrRefreshTimer);
-        if (attendancePollInterval) clearInterval(attendancePollInterval);
-    });
-</script>
-
-<style>
     .attendance-list {
         display: flex;
         flex-direction: column;
@@ -478,4 +317,331 @@
         font-size: 0.9rem;
     }
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    // Global variables
+    let attendancePollInterval = null;
+    let qrMonitorInterval = null;
+    let currentQRSeed = null;
+    let sessionStartTime = null;
+    let lastScanTime = null;
+    
+    // Load QR code from server
+    function loadQRCode() {
+        fetch(`/lecturer/courses/{{ course.id }}/qr`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.qr_seed && data.qr_seed !== currentQRSeed) {
+                    currentQRSeed = data.qr_seed;
+                    
+                    // Clear previous QR code
+                    document.getElementById('qrCodeContainer').innerHTML = '';
+                    
+                    // Generate new QR code
+                    new QRCode(document.getElementById("qrCodeContainer"), {
+                        text: currentQRSeed,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#000000",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+                    
+                    // Update display status
+                    document.getElementById('qrRefreshStatus').textContent = 'Active - Rotates on scan';
+                    document.getElementById('qrRefreshStatus').style.color = '#42b883';
+                    
+                    console.log('QR Code loaded:', currentQRSeed);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading QR:', error);
+                document.getElementById('qrRefreshStatus').textContent = 'Error loading QR';
+                document.getElementById('qrRefreshStatus').style.color = '#ff6b6b';
+            });
+    }
+    
+    // Monitor for QR changes (when students scan)
+    function startQRChangeMonitor() {
+        // Clear any existing interval
+        if (qrMonitorInterval) {
+            clearInterval(qrMonitorInterval);
+        }
+        
+        // Check for QR changes every 2 seconds
+        qrMonitorInterval = setInterval(() => {
+            fetch(`/lecturer/courses/{{ course.id }}/qr-status`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.current_qr && data.current_qr !== currentQRSeed) {
+                        console.log('QR changed from', currentQRSeed, 'to', data.current_qr);
+                        currentQRSeed = data.current_qr;
+                        loadQRCode();
+                        
+                        // Show notification
+                        showNotification('QR Code Updated', 'QR code rotated after student scan.');
+                        
+                        // Update last scan time
+                        lastScanTime = new Date();
+                        updateLastScanDisplay();
+                    }
+                })
+                .catch(error => console.error('Error checking QR status:', error));
+        }, 2000);
+    }
+    
+    // Manual QR refresh (for lecturer)
+    function manualRefreshQR() {
+        const btn = document.getElementById('manualRefreshBtn');
+        const originalText = btn.innerHTML;
+        
+        // Show loading state
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+        btn.disabled = true;
+        
+        fetch(`/lecturer/courses/{{ course.id }}/generate-qr`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.qr_hash) {
+                currentQRSeed = data.qr_hash;
+                loadQRCode();
+                showNotification('QR Code Manually Refreshed', 'New QR code generated.');
+            } else if (data.qr_seed) {
+                currentQRSeed = data.qr_seed;
+                loadQRCode();
+                showNotification('QR Code Manually Refreshed', 'New QR code generated.');
+            }
+        })
+        .catch(error => {
+            console.error('Error refreshing QR:', error);
+            showNotification('Error', 'Failed to refresh QR code.');
+        })
+        .finally(() => {
+            // Restore button state
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+    
+    // Poll attendance records
+    function pollAttendance() {
+        fetch(`/lecturer/courses/{{ course.id }}/live-attendance/poll`)
+            .then(response => response.json())
+            .then(records => {
+                updateAttendanceFeed(records);
+                document.getElementById('totalAttendees').textContent = records.length;
+                
+                // Update last scan time if there are records
+                if (records.length > 0) {
+                    lastScanTime = new Date(records[0].scanned_at);
+                    updateLastScanDisplay();
+                }
+            })
+            .catch(error => console.error('Error polling attendance:', error));
+    }
+    
+    // Update last scan time display
+    function updateLastScanDisplay() {
+        const lastScanElement = document.getElementById('lastScanTime');
+        
+        if (!lastScanTime) {
+            lastScanElement.textContent = 'No scans yet';
+            return;
+        }
+        
+        const now = new Date();
+        const diffMs = now - lastScanTime;
+        const diffSec = Math.floor(diffMs / 1000);
+        
+        if (diffSec < 60) {
+            lastScanElement.textContent = `${diffSec} seconds ago`;
+        } else if (diffSec < 3600) {
+            const minutes = Math.floor(diffSec / 60);
+            lastScanElement.textContent = `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+        } else {
+            lastScanElement.textContent = lastScanTime.toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+    }
+    
+    // Update attendance feed
+    function updateAttendanceFeed(records) {
+        const feedContainer = document.getElementById('attendanceFeed');
+        
+        if (records.length === 0) {
+            feedContainer.innerHTML = `
+                <div class="empty-feed">
+                    <i class="fas fa-user-clock"></i>
+                    <p>Waiting for students to check in...</p>
+                </div>
+            `;
+            return;
+        }
+        
+        let html = '<div class="attendance-list">';
+        
+        records.forEach(record => {
+            const time = new Date(record.scanned_at).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            html += `
+                <div class="attendance-item">
+                    <div class="student-avatar">
+                        ${record.students?.users?.profile_photo_url ? 
+                            `<img src="${record.students.users.profile_photo_url}" alt="Profile">` : 
+                            `<i class="fas fa-user"></i>`}
+                    </div>
+                    <div class="student-info">
+                        <h4>${record.students?.users?.full_name || 'Unknown Student'}</h4>
+                        <p>${record.students?.index_number || ''}</p>
+                    </div>
+                    <div class="check-in-time">
+                        <span class="time">${time}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        feedContainer.innerHTML = html;
+    }
+    
+    // Update session timer
+    function updateSessionTimer() {
+        if (!sessionStartTime) return;
+        
+        const now = new Date();
+        const diff = Math.floor((now - sessionStartTime) / 1000);
+        
+        // Prevent negative numbers
+        if (diff < 0) {
+            document.getElementById('sessionTimer').textContent = '00:00:00';
+            return;
+        }
+        
+        const hours = Math.floor(diff / 3600);
+        const minutes = Math.floor((diff % 3600) / 60);
+        const seconds = diff % 60;
+        
+        document.getElementById('sessionTimer').textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // Show notification
+    function showNotification(title, message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'qr-notification';
+        notification.innerHTML = `
+            <strong>${title}</strong>
+            <p>${message}</p>
+        `;
+        
+        // Add styles
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #42b883;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Initializing live attendance page...');
+        
+        // Set session start time to current time
+        sessionStartTime = new Date();
+        
+        // Load initial QR code
+        loadQRCode();
+        
+        // Start monitoring for QR changes
+        startQRChangeMonitor();
+        
+        // Start polling for attendance updates every 3 seconds
+        pollAttendance();
+        attendancePollInterval = setInterval(pollAttendance, 3000);
+        
+        // Update session timer every second
+        setInterval(updateSessionTimer, 1000);
+        
+        // Update last scan display every second
+        setInterval(updateLastScanDisplay, 1000);
+        
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                console.log('Page hidden, pausing intervals');
+                if (attendancePollInterval) clearInterval(attendancePollInterval);
+                if (qrMonitorInterval) clearInterval(qrMonitorInterval);
+            } else {
+                console.log('Page visible, resuming intervals');
+                // Refresh data immediately
+                pollAttendance();
+                loadQRCode();
+                // Restart intervals
+                attendancePollInterval = setInterval(pollAttendance, 3000);
+                startQRChangeMonitor();
+            }
+        });
+    });
+    
+    // Clean up when leaving page
+    window.addEventListener('beforeunload', function() {
+        console.log('Cleaning up intervals...');
+        if (attendancePollInterval) clearInterval(attendancePollInterval);
+        if (qrMonitorInterval) clearInterval(qrMonitorInterval);
+    });
+    
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
 {% endblock %}
