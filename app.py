@@ -27,6 +27,18 @@ app.config['UPLOAD_FOLDER'] = 'static/uploads/profile_photos'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2MB max file size
 
+@app.context_processor
+def inject_user():
+    """Make current_user available in all templates"""
+    user_info = {}
+    if 'user_id' in session:
+        user_info['id'] = session['user_id']
+        user_info['role'] = session.get('role')
+        user_info['full_name'] = session.get('full_name', 'User')
+        user_info['email'] = session.get('email', '')
+        user_info['index_number'] = session.get('index_number')
+    return dict(current_user=user_info)
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
@@ -883,19 +895,43 @@ def start_session(course_id):
         }), 400
 
     qr_seed = str(uuid.uuid4())
-
-    # Create session with your schema's structure
-    insert = (
-        supabase
-        .table("class_sessions")
-        .insert({
-            "course_id": course_id,
-            "start_time": now.isoformat(),
-            "is_active": True,
-            "qr_seed": qr_seed,
-        })
-        .execute()
-    )
+    
+    # FIX: Try both formats to see what works with your database
+    # Option 1: Time only (HH:MM:SS)
+    time_only = now.strftime('%H:%M:%S')
+    
+    # Option 2: Full timestamp
+    timestamp = now.isoformat()
+    
+    # Create session data - try time_only first
+    insert_data = {
+        "course_id": course_id,
+        "start_time": time_only,  # Use time format
+        "started_at": timestamp,  # Full timestamp
+        "is_active": True,
+        "qr_seed": qr_seed,
+    }
+    
+    # Create session
+    try:
+        insert = (
+            supabase
+            .table("class_sessions")
+            .insert(insert_data)
+            .execute()
+        )
+    except Exception as e:
+        # If time format fails, try with timestamp
+        if "invalid input syntax for type time" in str(e):
+            insert_data["start_time"] = timestamp
+            insert = (
+                supabase
+                .table("class_sessions")
+                .insert(insert_data)
+                .execute()
+            )
+        else:
+            raise e
 
     return redirect(url_for("lecturer_course_sessions", course_id=course_id))
 
@@ -3083,6 +3119,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 """
+# Add this after: app = Flask(__name__)
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=False)
