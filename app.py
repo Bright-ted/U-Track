@@ -811,50 +811,72 @@ def lecturer_course_students(course_id):
     if not course:
         return "Unauthorized", 403
 
-    # Get students registered for this course with their details
-    registrations = (
-        supabase
-        .table("course_registration")
-        .select(
-            """
-            student_id,
-            students(
-                index_number,
-                programme,
-                level,
-                department,
-                users(
-                    id,
-                    full_name,
-                    email,
-                    profile_photo_url
-                )
-            )
-            """
+    # Get students registered for this course with their details - SIMPLIFIED QUERY
+    try:
+        # First get registration records
+        registrations = (
+            supabase
+            .table("course_registration")
+            .select("student_id")
+            .eq("course_id", course_id)
+            .execute()
+            .data
         )
-        .eq("course_id", course_id)
-        .execute()
-        .data
-    )
-
-    # Process the data to flatten the structure
-    students = []
-    for reg in registrations:
-        if reg.get('students') and reg['students'].get('users'):
-            student_data = {
-                'student_id': reg['student_id'],
-                'index_number': reg['students']['index_number'],
-                'programme': reg['students']['programme'],
-                'level': reg['students']['level'],
-                'department': reg['students']['department'],
-                'full_name': reg['students']['users']['full_name'],
-                'email': reg['students']['users']['email'],
-                'profile_photo_url': reg['students']['users']['profile_photo_url']
-            }
-            students.append(student_data)
+        
+        students = []
+        
+        for reg in registrations:
+            student_id = reg["student_id"]
+            
+            # Get student details from users table
+            user_query = (
+                supabase
+                .table("users")
+                .select("id, full_name, email, profile_photo_url")
+                .eq("id", student_id)
+                .single()
+                .execute()
+            )
+            
+            if user_query.data:
+                user = user_query.data
+                
+                # Get student academic details
+                student_query = (
+                    supabase
+                    .table("students")
+                    .select("index_number, programme, level, department")
+                    .eq("user_id", student_id)
+                    .single()
+                    .execute()
+                )
+                
+                student_data = {}
+                if student_query.data:
+                    student_data = student_query.data
+                
+                # Combine data
+                student_info = {
+                    'student_id': student_id,
+                    'full_name': user['full_name'],
+                    'email': user['email'],
+                    'profile_photo_url': user['profile_photo_url'],
+                    'index_number': student_data.get('index_number', 'N/A'),
+                    'programme': student_data.get('programme', 'Not specified'),
+                    'level': student_data.get('level', 0),
+                    'department': student_data.get('department', 'Not specified')
+                }
+                students.append(student_info)
+        
+        # Sort students by index number
+        students.sort(key=lambda x: x.get('index_number', ''))
+        
+    except Exception as e:
+        print(f"Error fetching students: {e}")
+        students = []
 
     return render_template(
-        "lecturer_course_students.html",
+        "lecturer_course_students.html",  # Make sure this matches your template filename
         course=course,
         students=students
     )
