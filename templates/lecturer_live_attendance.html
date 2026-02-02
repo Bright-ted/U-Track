@@ -34,16 +34,16 @@
             
             <div class="qr-code-wrapper">
                 <div id="qrCodeContainer"></div>
-               <div class="qr-meta">
-    <p><i class="fas fa-sync-alt"></i> <span id="qrRefreshStatus">Active - Rotates on scan</span></p>
-    <p><i class="fas fa-users"></i> <span id="totalAttendees">0</span> students attended</p>
-    <p><i class="fas fa-history"></i> <span id="lastScanTime">No scans yet</span></p>
-</div>
+                <div class="qr-meta">
+                    <p><i class="fas fa-sync-alt"></i> <span id="qrRefreshStatus">Active - Rotates on scan</span></p>
+                    <p><i class="fas fa-users"></i> <span id="totalAttendees">0</span> students attended</p>
+                    <p><i class="fas fa-history"></i> <span id="lastScanTime">No scans yet</span></p>
+                </div>
             </div>
             
-            <button class="btn btn-primary" onclick="manualRefreshQR()" id="manualRefreshBtn">
-    <i class="fas fa-sync"></i> Manually Refresh QR
-</button>
+            <button class="btn btn-primary" id="manualRefreshBtn">
+                <i class="fas fa-sync"></i> Manually Refresh QR
+            </button>
         </div>
         
         <!-- Live Attendance Feed -->
@@ -247,6 +247,74 @@
         background: #545b62;
     }
     
+    .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+    }
+    
+    .notification {
+        background: white;
+        padding: 16px 24px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 35, 68, 0.15);
+        margin-bottom: 10px;
+        border-left: 4px solid #003366;
+        animation: slideIn 0.3s ease;
+        min-width: 300px;
+        max-width: 400px;
+    }
+    
+    .notification-success {
+        border-left-color: #10b981;
+    }
+    
+    .notification-error {
+        border-left-color: #ef4444;
+    }
+    
+    .notification-info {
+        border-left-color: #3b82f6;
+    }
+    
+    .notification-warning {
+        border-left-color: #f59e0b;
+    }
+    
+    .notification-content {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+    
+    .notification-content i {
+        font-size: 18px;
+    }
+    
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
     .attendance-list {
         display: flex;
         flex-direction: column;
@@ -316,77 +384,7 @@
         font-weight: 500;
         font-size: 0.9rem;
     }
-
-     .notification-container {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 10000;
-    }
-    
-    .notification {
-        background: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0, 35, 68, 0.15);
-        margin-bottom: 10px;
-        border-left: 4px solid #003366;
-        animation: slideIn 0.3s ease;
-        min-width: 300px;
-        max-width: 400px;
-    }
-    
-    .notification-success {
-        border-left-color: #10b981;
-    }
-    
-    .notification-error {
-        border-left-color: #ef4444;
-    }
-    
-    .notification-info {
-        border-left-color: #3b82f6;
-    }
-    
-    .notification-warning {
-        border-left-color: #f59e0b;
-    }
-    
-    .notification-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 500;
-    }
-    
-    .notification-content i {
-        font-size: 18px;
-    }
-    
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
 </style>
-
-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
@@ -397,6 +395,7 @@
     let sessionStartTime = null;
     let lastScanTime = null;
     let qrCodeInstance = null;
+    const courseId = "{{ course.id }}";
     
     // Show notification
     function showNotification(message, type = 'info', duration = 3000) {
@@ -459,7 +458,7 @@
     // Load QR code from server
     async function loadQRCode() {
         try {
-            const response = await fetch(`/lecturer/courses/{{ course.id }}/qr`);
+            const response = await fetch(`/lecturer/courses/${courseId}/qr`);
             const data = await response.json();
             
             if (data.qr_seed && data.qr_seed !== currentQRSeed) {
@@ -478,7 +477,7 @@
     // Check if QR has changed
     async function checkQRChange() {
         try {
-            const response = await fetch(`/lecturer/courses/{{ course.id }}/qr-status`);
+            const response = await fetch(`/lecturer/courses/${courseId}/qr-status`);
             const data = await response.json();
             
             if (data.current_qr && data.current_qr !== currentQRSeed) {
@@ -507,7 +506,7 @@
         btn.disabled = true;
         
         try {
-            const response = await fetch(`/lecturer/courses/{{ course.id }}/qr/refresh`, {
+            const response = await fetch(`/lecturer/courses/${courseId}/qr/refresh`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -536,7 +535,7 @@
     // Poll attendance records
     async function pollAttendance() {
         try {
-            const response = await fetch(`/lecturer/courses/{{ course.id }}/live-attendance/poll`);
+            const response = await fetch(`/lecturer/courses/${courseId}/live-attendance/poll`);
             const records = await response.json();
             
             updateAttendanceFeed(records);
@@ -652,7 +651,7 @@
         sessionStartTime = new Date();
         
         // Set button click handlers
-        document.getElementById('manualRefreshBtn').onclick = manualRefreshQR;
+        document.getElementById('manualRefreshBtn').addEventListener('click', manualRefreshQR);
         
         // Load initial QR code
         loadQRCode();
@@ -695,3 +694,4 @@
         if (qrMonitorInterval) clearInterval(qrMonitorInterval);
     });
 </script>
+{% endblock %}
