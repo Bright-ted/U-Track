@@ -383,6 +383,9 @@ def rotate_session_qr(session_id):
     try:
         new_seed = str(uuid.uuid4())
         
+        print(f"Rotating QR for session {session_id} to {new_seed}")
+        
+        # Update the QR seed
         update_response = (
             supabase
             .table("class_sessions")
@@ -395,14 +398,16 @@ def rotate_session_qr(session_id):
         )
         
         if update_response.data:
-            print(f"QR rotated for session {session_id}: {new_seed}")
+            print(f"QR rotated successfully for session {session_id}")
             return new_seed
         else:
-            print(f"Failed to rotate QR for session {session_id}")
+            print(f"No rows updated for session {session_id}")
             return None
             
     except Exception as e:
         print(f"Error rotating QR seed: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def get_attendance_count(session_id):
@@ -1358,86 +1363,156 @@ def attendance_scan():
     if not qr_seed:
         return jsonify({"error": "invalid_qr"}), 400
 
-    session_row = (
-        supabase
-        .table("class_sessions")
-        .select("id, course_id, started_at, is_active, qr_seed")
-        .eq("qr_seed", qr_seed)
-        .eq("is_active", True)
-        .single()
-        .execute()
-        .data
-    )
-
-    if not session_row:
-        return jsonify({"error": "expired_or_invalid"}), 400
-    
-    if session_row.get("qr_seed") != qr_seed:
-        return jsonify({"error": "qr_expired"}), 400
-    
-    registration_check = (
-        supabase
-        .table("course_registration")
-        .select("*")
-        .eq("course_id", session_row["course_id"])
-        .eq("student_id", student_id)
-        .single()
-        .execute()
-        .data
-    )
-
-    if not registration_check:
-        return jsonify({"error": "not_registered"}), 403
-
-    existing_attendance = (
-        supabase
-        .table("attendance")
-        .select("*")
-        .eq("session_id", session_row["id"])
-        .eq("student_id", student_id)
-        .single()
-        .execute()
-        .data
-    )
-
-    if existing_attendance:
-        return jsonify({"error": "already_scanned"}), 400
-    
-    attendance_data = {
-        "session_id": session_row["id"],
-        "student_id": student_id,
-        "status": "present",
-        "scanned_at": datetime.now(timezone.utc).isoformat()
-    }
-    
-    supabase.table("attendance").insert(attendance_data).execute()
-
-    new_qr_seed = rotate_session_qr(session_row["id"])
-    
-    if not new_qr_seed:
-        return jsonify({"error": "qr_rotation_failed"}), 500
-
-    student = (
-        supabase
-        .table("students")
-        .select("index_number, users(full_name, profile_photo_url)")
-        .eq("user_id", student_id)
-        .single()
-        .execute()
-        .data
-    )
-
-    return jsonify({
-        "success": True,
-        "name": student["users"]["full_name"],
-        "index_number": student["index_number"],
-        "photo": student["users"]["profile_photo_url"],
-        "session_id": session_row["id"],
-        "course_id": session_row["course_id"],
-        "status": "present",
-        "qr_rotated": True,
-        "message": "Attendance marked successfully! QR code has been rotated."
-    })
+    try:
+        print(f"Processing QR scan - Student: {student_id}, QR: {qr_seed[:20]}...")
+        
+        # 1. Find active session with this QR seed (NO .single()!)
+        session_response = (
+            supabase
+            .table("class_sessions")
+            .select("id, course_id, started_at, is_active, qr_seed")
+            .eq("qr_seed", qr_seed)
+            .eq("is_active", True)
+            .execute()
+        )
+        
+        print(f"Session query result: {len(session_response.data) if session_response.data else 0} rows")
+        
+        if not session_response.data:
+            print(f"No active session found for QR seed: {qr_seed}")
+            return jsonify({"error": "expired_or_invalid"}), 400
+        
+        session_row = session_response.data[0]
+        
+        if session_row.get("qr_seed") != qr_seed:
+            print(f"QR seed mismatch: stored={session_row.get('qr_seed')}, received={qr_seed}")
+            return jsonify({"error": "qr_expired"}), 400
+        
+        print(f"Found session: {session_row['id']} for course: {session_row['course_id']}")
+        
+        # 2. Check if student is registered for this course (NO .single()!)
+        registration_response = (
+            supabase
+            .table("course_registration")
+            .select("*")
+            .eq("course_id", session_row["course_id"])
+            .eq("student_id", student_id)
+            .execute()
+        )
+        
+        print(f"Registration check: {len(registration_response.data) if registration_response.data else 0} rows")
+        
+        if not registration_response.data:
+            print(f"Student {student_id} not registered for course {session_row['course_id']}")
+            return jsonify({"error": "not_registered"}), 403
+        
+        # 3. Check if student already scanned for this session (NO .single()!)
+        existing_attendance_response = (
+            supabase
+            .table("attendance")
+            .select("*")
+            .eq("session_id", session_row["id"])
+            .eq("student_id", student_id)
+            .execute()
+        )
+        
+        print(f"Existing attendance check: {len(existing_attendance_response.data) if existing_attendance_response.data else 0} rows")
+        
+        if existing_attendance_response.data:
+            print(f"Student {student_id} already attended session {session_row['id']}")
+            return jsonify({"error": "already_scanned"}), 400
+        
+        # 4. Create attendance record
+        attendance_data = {
+            "session_id": session_row["id"],
+            "student_id": student_id,
+            "status": "present",
+            "scanned_at": datetime.now(timezone.utc).isoformat()
+        }
+        
+        print(f"Inserting attendance: {attendance_data}")
+        
+        attendance_response = supabase.table("attendance").insert(attendance_data).execute()
+        
+        if not attendance_response.data:
+            print(f"Failed to insert attendance record")
+            return jsonify({"error": "attendance_insert_failed"}), 500
+        
+        print(f"Attendance inserted successfully: {attendance_response.data[0]['id']}")
+        
+        # 5. Rotate QR seed after successful scan
+        new_qr_seed = rotate_session_qr(session_row["id"])
+        print(f"QR seed rotated: {new_qr_seed}")
+        
+        # 6. Get student info for response
+        try:
+            # Get user info
+            user_response = (
+                supabase
+                .table("users")
+                .select("full_name, profile_photo_url")
+                .eq("id", student_id)
+                .execute()
+            )
+            
+            student_info = {
+                "full_name": "Student",
+                "index_number": "N/A",
+                "profile_photo_url": None
+            }
+            
+            if user_response.data:
+                user_data = user_response.data[0]
+                student_info["full_name"] = user_data.get("full_name", "Student")
+                student_info["profile_photo_url"] = user_data.get("profile_photo_url")
+            
+            # Get index number from students table
+            try:
+                student_detail_response = (
+                    supabase
+                    .table("students")
+                    .select("index_number")
+                    .eq("user_id", student_id)
+                    .execute()
+                )
+                
+                if student_detail_response.data:
+                    student_info["index_number"] = student_detail_response.data[0].get("index_number", "N/A")
+                else:
+                    student_info["index_number"] = session.get("index_number", "N/A")
+            except Exception as index_error:
+                print(f"Error getting index number: {index_error}")
+                student_info["index_number"] = session.get("index_number", "N/A")
+                
+        except Exception as user_error:
+            print(f"Error fetching student info: {user_error}")
+            student_info = {
+                "full_name": session.get("full_name", "Student"),
+                "index_number": session.get("index_number", "N/A"),
+                "profile_photo_url": None
+            }
+        
+        # 7. Return success response
+        response_data = {
+            "success": True,
+            "name": student_info["full_name"],
+            "index_number": student_info["index_number"],
+            "photo": student_info["profile_photo_url"],
+            "session_id": session_row["id"],
+            "course_id": session_row["course_id"],
+            "status": "present",
+            "qr_rotated": bool(new_qr_seed),
+            "message": "Attendance marked successfully! QR code has been rotated."
+        }
+        
+        print(f"Returning success: {response_data}")
+        return jsonify(response_data)
+        
+    except Exception as e:
+        print(f"Error in attendance scan: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": "server_error", "details": str(e)}), 500
 
 @app.route("/lecturer/courses/<course_id>/qr/refresh", methods=["POST"])
 def manual_refresh_qr(course_id):
@@ -3244,7 +3319,65 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 """
-# Add this after: app = Flask(__name__)
+
+@app.route("/test/setup-scan", methods=["GET"])
+def test_setup_scan():
+    """Setup a test scenario for QR scanning"""
+    if session.get("role") != "lecturer":
+        return jsonify({"error": "unauthorized"}), 401
+    
+    lecturer_id = session["user_id"]
+    
+    # Get or create a course
+    courses_response = (
+        supabase
+        .table("courses")
+        .select("id, course_code")
+        .eq("lecturer_id", lecturer_id)
+        .limit(1)
+        .execute()
+    )
+    
+    if not courses_response.data:
+        # Create a test course
+        course_data = {
+            "course_code": "TEST101",
+            "course_title": "Test Course",
+            "lecturer_id": lecturer_id,
+            "academic_year": "2025",
+            "semester": 1
+        }
+        course_response = supabase.table("courses").insert(course_data).execute()
+        if not course_response.data:
+            return jsonify({"error": "course_creation_failed"}), 500
+        course_id = course_response.data[0]["id"]
+    else:
+        course_id = courses_response.data[0]["id"]
+    
+    # Create an active session with QR seed
+    qr_seed = str(uuid.uuid4())
+    session_data = {
+        "course_id": course_id,
+        "started_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True,
+        "qr_seed": qr_seed
+    }
+    
+    session_response = supabase.table("class_sessions").insert(session_data).execute()
+    
+    if not session_response.data:
+        return jsonify({"error": "session_creation_failed"}), 500
+    
+    session_id = session_response.data[0]["id"]
+    
+    return jsonify({
+        "course_id": course_id,
+        "session_id": session_id,
+        "qr_seed": qr_seed,
+        "test_url": f"/student/scan",
+        "test_qr_text": qr_seed,
+        "message": "Test setup complete. Use this QR seed for testing."
+    })
 
 
 if __name__ == "__main__":
