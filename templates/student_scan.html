@@ -6,6 +6,16 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Mobile-Friendly Instructions -->
+    <div class="mobile-instructions alert alert-info d-md-none mb-3">
+        <h6><i class="fas fa-mobile-alt"></i> Mobile Instructions:</h6>
+        <ul class="mb-0 pl-3">
+            <li>Hold your phone steady over the QR code</li>
+            <li>Make sure the QR code is within the scanning area</li>
+            <li>Enable camera permissions if prompted</li>
+        </ul>
+    </div>
+
     <!-- Scan Status -->
     <div class="scan-status-card mb-4">
         <div class="status-header">
@@ -24,37 +34,61 @@
         <!-- Camera Feed -->
         <div class="col-lg-8 mb-4">
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="fas fa-video"></i> Camera Feed
                     </h4>
+                    <div class="camera-actions">
+                        <button class="btn btn-sm btn-outline-secondary" id="flipCamera">
+                            <i class="fas fa-sync-alt"></i> Flip
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="flashToggle" style="display: none;">
+                            <i class="fas fa-bolt"></i> Flash
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="camera-container">
                         <div id="cameraView">
                             <div class="camera-placeholder" id="cameraPlaceholder">
-                                <i class="fas fa-camera fa-4x"></i>
-                                <p>Camera is starting...</p>
+                                <div class="placeholder-content">
+                                    <i class="fas fa-camera fa-4x mb-3"></i>
+                                    <h5>Camera Preview</h5>
+                                    <p class="text-muted">Camera will start when you click "Start Camera"</p>
+                                    <button class="btn btn-primary" id="startCameraMobile">
+                                        <i class="fas fa-play"></i> Start Camera
+                                    </button>
+                                </div>
                             </div>
-                            <video id="cameraFeed" playsinline style="display: none;"></video>
+                            <video id="cameraFeed" playsinline autoplay style="display: none;"></video>
+                            <canvas id="qrCanvas" style="display: none;"></canvas>
                         </div>
                         
                         <!-- QR Code Overlay -->
                         <div class="qr-overlay">
                             <div class="qr-guide"></div>
                             <div class="scan-line" id="scanLine"></div>
+                            <div class="scan-hint">
+                                <i class="fas fa-info-circle"></i> Align QR code within the box
+                            </div>
                         </div>
                         
-                        <div class="camera-controls mt-3">
-                            <button class="btn btn-primary" id="startCamera">
-                                <i class="fas fa-play"></i> Start Camera
-                            </button>
-                            <button class="btn btn-secondary" id="stopCamera" style="display: none;">
-                                <i class="fas fa-stop"></i> Stop Camera
-                            </button>
-                            <select class="form-control" id="cameraSelect" style="display: none;">
-                                <option value="">Select Camera...</option>
-                            </select>
+                        <div class="camera-controls mt-3 p-3">
+                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                <button class="btn btn-primary" id="startCamera">
+                                    <i class="fas fa-play"></i> Start Camera
+                                </button>
+                                <button class="btn btn-secondary" id="stopCamera" style="display: none;">
+                                    <i class="fas fa-stop"></i> Stop Camera
+                                </button>
+                                <button class="btn btn-outline-primary" id="toggleCamera">
+                                    <i class="fas fa-camera"></i> Switch Camera
+                                </button>
+                                <button class="btn btn-outline-success" id="uploadQR">
+                                    <i class="fas fa-upload"></i> Upload QR Image
+                                </button>
+                                <input type="file" id="qrFileInput" accept="image/*" capture="environment" style="display: none;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -63,17 +97,18 @@
         
         <!-- Scan Results -->
         <div class="col-lg-4">
-            <div class="card">
+            <div class="card h-100">
                 <div class="card-header">
                     <h4 class="mb-0">
                         <i class="fas fa-check-circle"></i> Scan Results
                     </h4>
                 </div>
-                <div class="card-body">
-                    <div class="scan-results" id="scanResults">
+                <div class="card-body d-flex flex-column">
+                    <div class="scan-results flex-grow-1" id="scanResults">
                         <div class="empty-results">
-                            <i class="fas fa-qrcode fa-3x"></i>
-                            <p>Scan results will appear here</p>
+                            <i class="fas fa-qrcode fa-3x mb-3"></i>
+                            <h5>Ready to Scan</h5>
+                            <p class="text-muted">Scan results will appear here</p>
                         </div>
                     </div>
                     
@@ -85,13 +120,17 @@
                             <input type="text" 
                                    class="form-control" 
                                    id="manualQRInput"
-                                   placeholder="Enter QR code here...">
+                                   placeholder="Enter QR code here..."
+                                   autocomplete="off">
                             <div class="input-group-append">
                                 <button class="btn btn-primary" id="manualSubmit">
-                                    <i class="fas fa-paper-plane"></i> Submit
+                                    <i class="fas fa-paper-plane"></i>
                                 </button>
                             </div>
                         </div>
+                        <small class="text-muted d-block mt-2">
+                            <i class="fas fa-lightbulb"></i> QR codes are case-sensitive
+                        </small>
                     </div>
                 </div>
             </div>
@@ -100,10 +139,13 @@
     
     <!-- Recent Attendance -->
     <div class="card mt-4">
-        <div class="card-header">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">
                 <i class="fas fa-history"></i> Recent Attendance
             </h4>
+            <button class="btn btn-sm btn-outline-secondary" id="refreshAttendance">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
         </div>
         <div class="card-body">
             <div class="recent-attendance" id="recentAttendance">
@@ -117,16 +159,13 @@
 </div>
 
 <!-- Success Modal -->
-<div class="modal fade" id="successModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="successModal" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="fas fa-check-circle text-success"></i> Attendance Marked
                 </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
             </div>
             <div class="modal-body">
                 <div class="success-content" id="successContent">
@@ -140,15 +179,112 @@
     </div>
 </div>
 
+<!-- Error Modal -->
+<div class="modal fade" id="errorModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-circle text-danger"></i> Error
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="errorModalBody">
+                <!-- Error content will be inserted here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Camera Permission Modal -->
+<div class="modal fade" id="cameraPermissionModal" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-camera text-info"></i> Camera Permission Required
+                </h5>
+            </div>
+            <div class="modal-body">
+                <p>To scan QR codes, you need to allow camera access.</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Note for iOS users:</strong> Make sure to:
+                    <ul class="mb-0 mt-2">
+                        <li>Tap "Allow" when prompted for camera access</li>
+                        <li>Check Settings > Safari > Camera if access was denied</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal" id="requestPermission">
+                    Allow Camera Access
+                </button>
+                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">
+                    Use Manual Entry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
     .container-fluid {
         padding: 0;
     }
     
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+        .camera-container {
+            height: 70vh !important;
+            max-height: 500px;
+        }
+        
+        #cameraView {
+            height: calc(100% - 60px) !important;
+        }
+        
+        .qr-guide {
+            width: 200px !important;
+            height: 200px !important;
+        }
+        
+        .scan-hint {
+            font-size: 0.8rem !important;
+            padding: 5px 10px !important;
+        }
+        
+        .mobile-instructions {
+            display: block !important;
+        }
+        
+        .camera-controls .btn {
+            font-size: 0.9rem;
+            padding: 8px 12px;
+        }
+    }
+    
+    /* Tablet styles */
+    @media (max-width: 992px) and (min-width: 769px) {
+        .camera-container {
+            height: 60vh;
+        }
+    }
+    
+    .mobile-instructions {
+        border-radius: 10px;
+        border-left: 4px solid #17a2b8;
+    }
+    
     .scan-status-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 25px;
+        padding: 20px;
         border-radius: 12px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
@@ -157,7 +293,9 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
     }
     
     .status-header h3 {
@@ -165,35 +303,49 @@
         display: flex;
         align-items: center;
         gap: 10px;
+        font-size: 1.3rem;
     }
     
     .badge-warning {
         background: linear-gradient(135deg, #ffa726 0%, #f57c00 100%);
         color: white;
-        padding: 8px 16px;
+        padding: 6px 12px;
         border-radius: 20px;
         font-weight: 500;
+        font-size: 0.9rem;
     }
     
     .badge-success {
         background: linear-gradient(135deg, #42b883 0%, #347357 100%);
         color: white;
-        padding: 8px 16px;
+        padding: 6px 12px;
         border-radius: 20px;
         font-weight: 500;
+        font-size: 0.9rem;
     }
     
     .badge-danger {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
         color: white;
-        padding: 8px 16px;
+        padding: 6px 12px;
         border-radius: 20px;
         font-weight: 500;
+        font-size: 0.9rem;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #4fc3f7 0%, #0288d1 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
     }
     
     .status-message p {
         margin: 0;
         opacity: 0.9;
+        font-size: 0.95rem;
     }
     
     .camera-container {
@@ -202,24 +354,40 @@
         background: #000;
         border-radius: 8px;
         overflow: hidden;
+        height: 500px;
     }
     
     #cameraView {
         position: relative;
         width: 100%;
-        height: 400px;
+        height: calc(100% - 60px);
         display: flex;
         align-items: center;
         justify-content: center;
+        background: #000;
     }
     
     .camera-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #1a1a1a;
+        z-index: 1;
+    }
+    
+    .placeholder-content {
         text-align: center;
         color: #fff;
         padding: 20px;
+        max-width: 300px;
     }
     
-    .camera-placeholder i {
+    .placeholder-content i {
         opacity: 0.5;
         margin-bottom: 15px;
     }
@@ -228,6 +396,7 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transform: scaleX(1); /* For front/back camera flipping */
     }
     
     .qr-overlay {
@@ -237,6 +406,7 @@
         width: 100%;
         height: 100%;
         pointer-events: none;
+        z-index: 2;
     }
     
     .qr-guide {
@@ -246,16 +416,19 @@
         transform: translate(-50%, -50%);
         width: 250px;
         height: 250px;
-        border: 2px solid rgba(255, 255, 255, 0.7);
+        border: 2px dashed rgba(255, 255, 255, 0.5);
         border-radius: 8px;
+        background: rgba(0, 0, 0, 0.2);
     }
     
     .qr-guide:before,
-    .qr-guide:after {
+    .qr-guide:after,
+    .qr-guide-corner-bottom-left,
+    .qr-guide-corner-bottom-right {
         content: '';
         position: absolute;
-        width: 30px;
-        height: 30px;
+        width: 20px;
+        height: 20px;
         border: 3px solid #42b883;
     }
     
@@ -264,7 +437,7 @@
         left: 0;
         border-right: none;
         border-bottom: none;
-        border-top-left-radius: 8px;
+        border-top-left-radius: 4px;
     }
     
     .qr-guide:after {
@@ -272,7 +445,23 @@
         right: 0;
         border-left: none;
         border-bottom: none;
-        border-top-right-radius: 8px;
+        border-top-right-radius: 4px;
+    }
+    
+    .qr-guide-corner-bottom-left {
+        bottom: 0;
+        left: 0;
+        border-right: none;
+        border-top: none;
+        border-bottom-left-radius: 4px;
+    }
+    
+    .qr-guide-corner-bottom-right {
+        bottom: 0;
+        right: 0;
+        border-left: none;
+        border-top: none;
+        border-bottom-right-radius: 4px;
     }
     
     #scanLine {
@@ -284,21 +473,49 @@
         height: 3px;
         background: linear-gradient(90deg, transparent, #42b883, transparent);
         animation: scan 2s infinite linear;
+        box-shadow: 0 0 10px rgba(66, 184, 131, 0.7);
     }
     
     @keyframes scan {
-        0% { top: 0; }
-        100% { top: 100%; }
+        0% { top: 0; opacity: 0.7; }
+        50% { opacity: 1; }
+        100% { top: 100%; opacity: 0.7; }
+    }
+    
+    .scan-hint {
+        position: absolute;
+        bottom: 20px;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 0.9rem;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+    }
+    
+    .scan-hint i {
+        margin-right: 5px;
     }
     
     .camera-controls {
-        display: flex;
-        gap: 10px;
-        align-items: center;
+        background: #f8f9fa;
+        border-top: 1px solid #dee2e6;
     }
     
-    .form-control {
-        flex: 1;
+    .camera-controls .btn {
+        font-size: 0.9rem;
+    }
+    
+    .camera-actions {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .camera-actions .btn-sm {
+        padding: 3px 8px;
+        font-size: 0.8rem;
     }
     
     .scan-results {
@@ -311,6 +528,7 @@
     .empty-results {
         text-align: center;
         color: #6c757d;
+        padding: 30px 0;
     }
     
     .empty-results i {
@@ -354,439 +572,674 @@
     
     .success-content {
         text-align: center;
-        padding: 20px 0;
+        padding: 10px 0;
+    }
+    
+    /* For iOS Safari video fullscreen fix */
+    video::-webkit-media-controls {
+        display: none !important;
+    }
+    
+    video::-webkit-media-controls-enclosure {
+        display: none !important;
+    }
+    
+    video::-webkit-media-controls-panel {
+        display: none !important;
+    }
+    
+    /* Touch-friendly buttons for mobile */
+    .btn {
+        touch-action: manipulation;
+    }
+    
+    /* Better focus states for accessibility */
+    .btn:focus {
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
     }
 </style>
 
-<!-- Include jsQR library for QR code scanning -->
+<!-- Include jsQR library -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
 <script>
-    let videoStream = null;
-    let cameraActive = false;
-    let scanningActive = false;
-    let scanInterval = null;
-    let currentSessionId = null;
-    
-    // HTML elements
-    const cameraFeed = document.getElementById('cameraFeed');
-    const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-    const startCameraBtn = document.getElementById('startCamera');
-    const stopCameraBtn = document.getElementById('stopCamera');
-    const cameraSelect = document.getElementById('cameraSelect');
-    const scanLine = document.getElementById('scanLine');
-    const statusBadge = document.getElementById('statusBadge');
-    const statusMessage = document.getElementById('statusMessage');
-    const scanResults = document.getElementById('scanResults');
-    const recentAttendance = document.getElementById('recentAttendance');
-    const manualQRInput = document.getElementById('manualQRInput');
-    const manualSubmit = document.getElementById('manualSubmit');
-    
-    async function getCameraDevices() {
-        try {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    // Mobile-compatible QR scanner with better error handling
+    class QRScanner {
+        constructor() {
+            this.videoStream = null;
+            this.cameraActive = false;
+            this.scanningActive = false;
+            this.scanInterval = null;
+            this.currentSessionId = null;
+            this.currentCamera = 'environment'; // 'environment' or 'user'
+            this.isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            this.isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            this.isAndroid = /Android/i.test(navigator.userAgent);
             
-            cameraSelect.innerHTML = '<option value="">Select Camera...</option>';
-            videoDevices.forEach(device => {
-                const option = document.createElement('option');
-                option.value = device.deviceId;
-                option.text = device.label || `Camera ${cameraSelect.options.length}`;
-                cameraSelect.appendChild(option);
-            });
-            
-            if (videoDevices.length > 0) {
-                cameraSelect.style.display = 'inline-block';
-            }
-        } catch (error) {
-            console.error('Error getting camera devices:', error);
+            // Initialize elements
+            this.initElements();
+            this.initEventListeners();
+            this.checkPermissions();
         }
-    }
-    
-    async function startCamera(deviceId = null) {
-        try {
-            const constraints = {
-                video: {
-                    facingMode: 'environment',
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+        
+        initElements() {
+            this.cameraFeed = document.getElementById('cameraFeed');
+            this.cameraPlaceholder = document.getElementById('cameraPlaceholder');
+            this.startCameraBtn = document.getElementById('startCamera');
+            this.startCameraMobileBtn = document.getElementById('startCameraMobile');
+            this.stopCameraBtn = document.getElementById('stopCamera');
+            this.toggleCameraBtn = document.getElementById('toggleCamera');
+            this.flipCameraBtn = document.getElementById('flipCamera');
+            this.flashToggleBtn = document.getElementById('flashToggle');
+            this.uploadQRBtn = document.getElementById('uploadQR');
+            this.qrFileInput = document.getElementById('qrFileInput');
+            this.scanLine = document.getElementById('scanLine');
+            this.statusBadge = document.getElementById('statusBadge');
+            this.statusMessage = document.getElementById('statusMessage');
+            this.scanResults = document.getElementById('scanResults');
+            this.recentAttendance = document.getElementById('recentAttendance');
+            this.manualQRInput = document.getElementById('manualQRInput');
+            this.manualSubmit = document.getElementById('manualSubmit');
+            this.refreshAttendanceBtn = document.getElementById('refreshAttendance');
+            this.qrCanvas = document.getElementById('qrCanvas');
+            this.canvasContext = this.qrCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        
+        initEventListeners() {
+            this.startCameraBtn.addEventListener('click', () => this.startCamera());
+            this.startCameraMobileBtn.addEventListener('click', () => this.startCamera());
+            this.stopCameraBtn.addEventListener('click', () => this.stopCamera());
+            this.toggleCameraBtn.addEventListener('click', () => this.switchCamera());
+            this.flipCameraBtn.addEventListener('click', () => this.flipCamera());
+            this.uploadQRBtn.addEventListener('click', () => this.qrFileInput.click());
+            this.qrFileInput.addEventListener('change', (e) => this.handleImageUpload(e));
+            this.manualSubmit.addEventListener('click', () => this.handleManualQR());
+            this.manualQRInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.handleManualQR();
+            });
+            this.refreshAttendanceBtn.addEventListener('click', () => this.loadRecentAttendance());
+            
+            // Handle page visibility changes (for mobile)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && this.cameraActive) {
+                    this.stopCamera();
                 }
-            };
-            
-            if (deviceId) {
-                constraints.video.deviceId = { exact: deviceId };
-            }
-            
-            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-            cameraFeed.srcObject = videoStream;
-            
-            cameraFeed.style.display = 'block';
-            cameraPlaceholder.style.display = 'none';
-            startCameraBtn.style.display = 'none';
-            stopCameraBtn.style.display = 'inline-block';
-            scanLine.style.display = 'block';
-            
-            cameraActive = true;
-            updateStatus('ready', 'Camera active. Scan QR code now.');
-            
-            // Start scanning
-            startScanning();
-            
-        } catch (error) {
-            console.error('Error starting camera:', error);
-            updateStatus('error', 'Could not access camera. Please check permissions.');
-            
-            if (error.name === 'NotAllowedError') {
-                statusMessage.innerHTML = `
-                    <p>Camera access denied. Please allow camera access in your browser settings.</p>
-                    <p>You can still enter the QR code manually below.</p>
-                `;
-            } else if (error.name === 'NotFoundError') {
-                statusMessage.innerHTML = `
-                    <p>No camera found on your device.</p>
-                    <p>Please use the manual entry option below.</p>
-                `;
-            }
-        }
-    }
-    
-    function stopCamera() {
-        if (videoStream) {
-            videoStream.getTracks().forEach(track => track.stop());
-            videoStream = null;
-        }
-        
-        cameraFeed.srcObject = null;
-        cameraFeed.style.display = 'none';
-        cameraPlaceholder.style.display = 'flex';
-        startCameraBtn.style.display = 'inline-block';
-        stopCameraBtn.style.display = 'none';
-        scanLine.style.display = 'none';
-        
-        cameraActive = false;
-        stopScanning();
-        updateStatus('idle', 'Camera stopped. Ready to start.');
-    }
-    
-    function startScanning() {
-        if (scanningActive) return;
-        
-        scanningActive = true;
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        
-        scanInterval = setInterval(() => {
-            if (!cameraActive || !cameraFeed.videoWidth) return;
-            
-            // Set canvas dimensions to match video
-            canvas.width = cameraFeed.videoWidth;
-            canvas.height = cameraFeed.videoHeight;
-            
-            // Draw video frame to canvas
-            context.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
-            
-            // Get image data from center region (where QR guide is)
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const scanSize = 250;
-            
-            const imageData = context.getImageData(
-                centerX - scanSize/2,
-                centerY - scanSize/2,
-                scanSize,
-                scanSize
-            );
-            
-            // Try to decode QR code
-            const code = jsQR(imageData.data, scanSize, scanSize);
-            
-            if (code) {
-                // QR code found!
-                handleQRCode(code.data);
-            }
-        }, 500); // Check every 500ms
-    }
-    
-    function stopScanning() {
-        if (scanInterval) {
-            clearInterval(scanInterval);
-            scanInterval = null;
-        }
-        scanningActive = false;
-    }
-    
-    function handleQRCode(qrData) {
-        // Stop scanning to prevent multiple submissions
-        stopScanning();
-        updateStatus('scanning', 'QR code detected. Processing...');
-        
-        // Send QR code to server
-        submitQRCode(qrData);
-    }
-    
-    async function submitQRCode(qrData) {
-        try {
-            const response = await fetch('/attendance/scan', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ qr_seed: qrData })
             });
             
-            const result = await response.json();
+            // Handle page unload
+            window.addEventListener('beforeunload', () => this.stopCamera());
             
-            if (result.success) {
-                // Success!
-                currentSessionId = result.session_id;
-                updateStatus('success', 'Attendance marked successfully!');
-                showSuccessModal(result);
-                disableCameraForSession();
-                loadRecentAttendance();
-            } else {
-                // Error
-                updateStatus('error', result.error || 'Error marking attendance');
+            // Handle orientation changes for mobile
+            window.addEventListener('orientationchange', () => {
                 setTimeout(() => {
-                    if (cameraActive) startScanning();
+                    if (this.cameraActive) {
+                        this.adjustCameraForOrientation();
+                    }
+                }, 300);
+            });
+        }
+        
+        async checkPermissions() {
+            try {
+                // Check if we have camera permissions
+                const permissionStatus = await navigator.permissions.query({ name: 'camera' });
+                
+                if (permissionStatus.state === 'granted') {
+                    // Permissions already granted
+                    this.updateStatus('idle', 'Camera ready. Click "Start Camera" to begin.');
+                } else if (permissionStatus.state === 'prompt') {
+                    // Will prompt user when they start camera
+                    this.updateStatus('idle', 'Ready to scan QR code.');
+                } else {
+                    // Permission denied
+                    this.showCameraPermissionModal();
+                }
+                
+                permissionStatus.onchange = () => {
+                    if (permissionStatus.state === 'granted') {
+                        this.updateStatus('idle', 'Camera permission granted. Ready to scan.');
+                    } else if (permissionStatus.state === 'denied') {
+                        this.showCameraPermissionModal();
+                    }
+                };
+            } catch (error) {
+                // Permissions API not supported (older browsers)
+                console.log('Permissions API not supported');
+            }
+        }
+        
+        showCameraPermissionModal() {
+            const modal = new bootstrap.Modal(document.getElementById('cameraPermissionModal'));
+            modal.show();
+            
+            document.getElementById('requestPermission').addEventListener('click', () => {
+                this.startCamera();
+            });
+        }
+        
+        async startCamera() {
+            try {
+                this.updateStatus('initializing', 'Starting camera...');
+                
+                // Mobile-specific constraints
+                const constraints = {
+                    video: {
+                        facingMode: this.currentCamera,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        frameRate: { ideal: 30 }
+                    },
+                    audio: false
+                };
+                
+                // Adjust for iOS
+                if (this.isIOS) {
+                    // iOS Safari needs specific settings
+                    constraints.video = {
+                        facingMode: this.currentCamera,
+                        width: { min: 480, ideal: 1280, max: 1920 },
+                        height: { min: 320, ideal: 720, max: 1080 },
+                        frameRate: { ideal: 24 }
+                    };
+                }
+                
+                // Try to get camera stream
+                this.videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
+                // Set video source
+                this.cameraFeed.srcObject = this.videoStream;
+                
+                // Wait for video to be ready
+                await new Promise((resolve) => {
+                    this.cameraFeed.onloadedmetadata = () => {
+                        this.cameraFeed.play().then(resolve);
+                    };
+                });
+                
+                // Update UI
+                this.cameraFeed.style.display = 'block';
+                this.cameraPlaceholder.style.display = 'none';
+                this.startCameraBtn.style.display = 'none';
+                this.startCameraMobileBtn.style.display = 'none';
+                this.stopCameraBtn.style.display = 'inline-block';
+                this.scanLine.style.display = 'block';
+                
+                this.cameraActive = true;
+                this.updateStatus('ready', 'Camera active. Scan QR code now.');
+                
+                // Adjust for orientation
+                this.adjustCameraForOrientation();
+                
+                // Start scanning
+                this.startScanning();
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                
+                if (error.name === 'NotAllowedError') {
+                    this.updateStatus('error', 'Camera access denied. Please allow camera access.');
+                    this.showErrorModal(
+                        'Camera Access Denied',
+                        'Please enable camera access in your browser settings and try again.'
+                    );
+                } else if (error.name === 'NotFoundError') {
+                    this.updateStatus('error', 'No camera found.');
+                    this.showErrorModal(
+                        'No Camera Found',
+                        'No camera was found on your device. Please use manual entry or upload an image.'
+                    );
+                } else if (error.name === 'NotReadableError') {
+                    this.updateStatus('error', 'Camera is in use by another application.');
+                    this.showErrorModal(
+                        'Camera in Use',
+                        'Another application is using the camera. Please close it and try again.'
+                    );
+                } else if (error.name === 'OverconstrainedError') {
+                    // Try with simpler constraints
+                    this.currentCamera = 'user'; // Try front camera
+                    setTimeout(() => this.startCamera(), 100);
+                } else {
+                    this.updateStatus('error', 'Failed to start camera: ' + error.message);
+                    this.showErrorModal(
+                        'Camera Error',
+                        'Failed to start camera. Please try manual entry.'
+                    );
+                }
+            }
+        }
+        
+        stopCamera() {
+            if (this.scanInterval) {
+                clearInterval(this.scanInterval);
+                this.scanInterval = null;
+            }
+            
+            if (this.videoStream) {
+                this.videoStream.getTracks().forEach(track => track.stop());
+                this.videoStream = null;
+            }
+            
+            this.cameraFeed.srcObject = null;
+            this.cameraFeed.style.display = 'none';
+            this.cameraPlaceholder.style.display = 'flex';
+            this.startCameraBtn.style.display = 'inline-block';
+            this.startCameraMobileBtn.style.display = 'inline-block';
+            this.stopCameraBtn.style.display = 'none';
+            this.scanLine.style.display = 'none';
+            
+            this.cameraActive = false;
+            this.scanningActive = false;
+            this.updateStatus('idle', 'Camera stopped. Ready to start.');
+        }
+        
+        switchCamera() {
+            if (!this.cameraActive) return;
+            
+            this.currentCamera = this.currentCamera === 'environment' ? 'user' : 'environment';
+            this.stopCamera();
+            setTimeout(() => this.startCamera(), 300);
+        }
+        
+        flipCamera() {
+            if (!this.cameraActive) return;
+            
+            this.cameraFeed.style.transform = this.cameraFeed.style.transform === 'scaleX(-1)' 
+                ? 'scaleX(1)' 
+                : 'scaleX(-1)';
+        }
+        
+        adjustCameraForOrientation() {
+            if (!this.cameraActive) return;
+            
+            // Get current orientation
+            const orientation = window.screen.orientation 
+                ? window.screen.orientation.type 
+                : window.orientation;
+            
+            // Adjust camera feed based on orientation
+            if (this.isMobile) {
+                let transform = '';
+                switch(orientation) {
+                    case 'landscape-primary':
+                    case 90:
+                        transform = 'rotate(0deg)';
+                        break;
+                    case 'landscape-secondary':
+                    case -90:
+                        transform = 'rotate(180deg)';
+                        break;
+                    case 'portrait-secondary':
+                    case -180:
+                        transform = 'rotate(270deg)';
+                        break;
+                    case 'portrait-primary':
+                    default:
+                        transform = 'rotate(90deg)';
+                        break;
+                }
+                
+                this.cameraFeed.style.transform = transform;
+            }
+        }
+        
+        startScanning() {
+            if (this.scanningActive) return;
+            
+            this.scanningActive = true;
+            this.updateStatus('scanning', 'Scanning for QR codes...');
+            
+            this.scanInterval = setInterval(() => {
+                if (!this.cameraActive || !this.cameraFeed.videoWidth) return;
+                
+                // Set canvas dimensions
+                this.qrCanvas.width = this.cameraFeed.videoWidth;
+                this.qrCanvas.height = this.cameraFeed.videoHeight;
+                
+                // Draw video frame to canvas
+                this.canvasContext.drawImage(
+                    this.cameraFeed, 
+                    0, 0, 
+                    this.qrCanvas.width, 
+                    this.qrCanvas.height
+                );
+                
+                // Get image data from center region
+                const centerX = this.qrCanvas.width / 2;
+                const centerY = this.qrCanvas.height / 2;
+                const scanSize = Math.min(300, this.qrCanvas.width, this.qrCanvas.height);
+                
+                const imageData = this.canvasContext.getImageData(
+                    centerX - scanSize/2,
+                    centerY - scanSize/2,
+                    scanSize,
+                    scanSize
+                );
+                
+                // Try to decode QR code
+                try {
+                    const code = jsQR(imageData.data, scanSize, scanSize, {
+                        inversionAttempts: 'dontInvert'
+                    });
+                    
+                    if (code) {
+                        console.log('QR code detected:', code.data);
+                        this.handleQRCode(code.data);
+                    }
+                } catch (error) {
+                    console.error('QR decoding error:', error);
+                }
+            }, 300); // Scan every 300ms
+        }
+        
+        async handleQRCode(qrData) {
+            // Stop scanning temporarily
+            if (this.scanInterval) {
+                clearInterval(this.scanInterval);
+                this.scanInterval = null;
+            }
+            
+            this.updateStatus('processing', 'Validating QR code...');
+            
+            // Show scanning feedback
+            this.scanResults.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="sr-only">Processing...</span>
+                    </div>
+                    <h6>Processing QR Code...</h6>
+                    <p class="text-muted">${qrData.substring(0, 30)}...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/attendance/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ qr_seed: qrData.trim() })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Success!
+                    this.currentSessionId = result.session_id;
+                    this.updateStatus('success', 'Attendance marked successfully!');
+                    this.showSuccessModal(result);
+                    this.disableCameraForSession();
+                    this.loadRecentAttendance();
+                } else {
+                    // Error
+                    this.updateStatus('error', result.error || 'Error marking attendance');
+                    this.showErrorModal('Scan Failed', result.error || 'Failed to mark attendance');
+                    
+                    // Resume scanning after delay
+                    setTimeout(() => {
+                        if (this.cameraActive && !this.scanInterval) {
+                            this.startScanning();
+                        }
+                    }, 2000);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                this.updateStatus('error', 'Network error. Please try again.');
+                this.showErrorModal('Network Error', 'Please check your internet connection and try again.');
+                
+                // Resume scanning
+                setTimeout(() => {
+                    if (this.cameraActive && !this.scanInterval) {
+                        this.startScanning();
+                    }
                 }, 2000);
             }
-        } catch (error) {
-            console.error('Error submitting QR code:', error);
-            updateStatus('error', 'Network error. Please try again.');
-            setTimeout(() => {
-                if (cameraActive) startScanning();
-            }, 2000);
-        }
-    }
-    
-    function updateStatus(status, message) {
-        const badge = statusBadge.querySelector('.badge');
-        badge.className = 'badge';
-        
-        switch(status) {
-            case 'idle':
-                badge.classList.add('badge-warning');
-                badge.textContent = 'Ready to Scan';
-                break;
-            case 'ready':
-                badge.classList.add('badge-success');
-                badge.textContent = 'Camera Active';
-                break;
-            case 'scanning':
-                badge.classList.add('badge-info');
-                badge.textContent = 'Processing QR...';
-                break;
-            case 'success':
-                badge.classList.add('badge-success');
-                badge.textContent = 'Attendance Marked';
-                break;
-            case 'error':
-                badge.classList.add('badge-danger');
-                badge.textContent = 'Error';
-                break;
         }
         
-        statusMessage.innerHTML = `<p>${message}</p>`;
-    }
-    
-    function showSuccessModal(result) {
-        const modalContent = document.getElementById('successContent');
-        modalContent.innerHTML = `
-            <div class="success-details">
-                <div class="student-avatar-large mb-3">
-                    ${result.photo ? 
-                        `<img src="${result.photo}" alt="${result.name}" class="avatar-img">` : 
-                        `<i class="fas fa-user"></i>`}
-                </div>
-                <h4>Attendance Confirmed!</h4>
-                <p>Name: <strong>${result.name}</strong></p>
-                <p>Index: <strong>${result.index_number}</strong></p>
-                <p>Time: <strong>${new Date().toLocaleTimeString()}</strong></p>
-                <div class="alert alert-success mt-3">
-                    <i class="fas fa-check-circle"></i>
-                    Your attendance has been recorded successfully.
-                </div>
-            </div>
-        `;
-        
-        $('#successModal').modal('show');
-    }
-    
-    function disableCameraForSession() {
-        stopCamera();
-        updateStatus('success', 'Attendance already marked for this session.');
-        
-        // Update UI to show attendance is already taken
-        scanResults.innerHTML = `
-            <div class="already-attended">
-                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                <h5>Attendance Already Marked</h5>
-                <p class="text-muted">You have already marked attendance for this class session.</p>
-                <p>Session ID: <code>${currentSessionId}</code></p>
-            </div>
-        `;
-        
-        // Disable manual input
-        manualQRInput.disabled = true;
-        manualSubmit.disabled = true;
-    }
-    
-    async function loadRecentAttendance() {
-        try {
-            const response = await fetch('/student/attendance/recent');
-            const records = await response.json();
+        async handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
             
-            if (records.length === 0) {
-                recentAttendance.innerHTML = `
-                    <div class="no-attendance">
-                        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-                        <p>No recent attendance records found.</p>
-                    </div>
-                `;
+            // Reset file input
+            event.target.value = '';
+            
+            if (!file.type.startsWith('image/')) {
+                this.showErrorModal('Invalid File', 'Please upload an image file.');
                 return;
             }
             
-            let html = '<div class="recent-list">';
-            records.forEach(record => {
-                const time = new Date(record.scanned_at).toLocaleString();
-                html += `
-                    <div class="recent-item">
-                        <div class="recent-course">
-                            <strong>${record.class_sessions.courses.course_code}</strong>
-                            <span class="badge badge-success">${record.status}</span>
+            this.updateStatus('processing', 'Processing uploaded image...');
+            
+            const img = new Image();
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                img.onload = () => {
+                    // Draw image to canvas
+                    this.qrCanvas.width = img.width;
+                    this.qrCanvas.height = img.height;
+                    this.canvasContext.drawImage(img, 0, 0);
+                    
+                    // Try to decode QR code
+                    const imageData = this.canvasContext.getImageData(0, 0, img.width, img.height);
+                    const code = jsQR(imageData.data, img.width, img.height, {
+                        inversionAttempts: 'dontInvert'
+                    });
+                    
+                    if (code) {
+                        this.handleQRCode(code.data);
+                    } else {
+                        this.updateStatus('error', 'No QR code found in image.');
+                        this.showErrorModal('No QR Code Found', 'Could not find a valid QR code in the uploaded image.');
+                    }
+                };
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+        
+        handleManualQR() {
+            const qrCode = this.manualQRInput.value.trim();
+            if (!qrCode) {
+                this.showErrorModal('Empty Input', 'Please enter a QR code.');
+                return;
+            }
+            
+            if (qrCode.length < 10) {
+                this.showErrorModal('Invalid QR Code', 'QR code appears to be too short.');
+                return;
+            }
+            
+            this.handleQRCode(qrCode);
+            this.manualQRInput.value = '';
+        }
+        
+        updateStatus(status, message) {
+            const badge = this.statusBadge.querySelector('.badge');
+            badge.className = 'badge';
+            
+            switch(status) {
+                case 'idle':
+                    badge.classList.add('badge-warning');
+                    badge.textContent = 'Ready to Scan';
+                    break;
+                case 'initializing':
+                    badge.classList.add('badge-info');
+                    badge.textContent = 'Initializing';
+                    break;
+                case 'ready':
+                    badge.classList.add('badge-success');
+                    badge.textContent = 'Camera Active';
+                    break;
+                case 'scanning':
+                    badge.classList.add('badge-info');
+                    badge.textContent = 'Scanning...';
+                    break;
+                case 'processing':
+                    badge.classList.add('badge-primary');
+                    badge.textContent = 'Processing';
+                    break;
+                case 'success':
+                    badge.classList.add('badge-success');
+                    badge.textContent = 'Success';
+                    break;
+                case 'error':
+                    badge.classList.add('badge-danger');
+                    badge.textContent = 'Error';
+                    break;
+            }
+            
+            this.statusMessage.innerHTML = `<p>${message}</p>`;
+        }
+        
+        showSuccessModal(result) {
+            const modalContent = document.getElementById('successContent');
+            modalContent.innerHTML = `
+                <div class="success-details">
+                    <div class="student-avatar-large mb-3 mx-auto" style="width: 80px; height: 80px;">
+                        ${result.photo ? 
+                            `<img src="${result.photo}" alt="${result.name}" 
+                                  class="rounded-circle w-100 h-100" style="object-fit: cover;">` : 
+                            `<div class="rounded-circle w-100 h-100 bg-primary d-flex align-items-center justify-content-center text-white">
+                                <i class="fas fa-user fa-2x"></i>
+                            </div>`}
+                    </div>
+                    <h4 class="text-success">Attendance Confirmed!</h4>
+                    <div class="alert alert-success mt-3">
+                        <i class="fas fa-check-circle"></i>
+                        Your attendance has been recorded successfully.
+                    </div>
+                    <hr>
+                    <div class="text-left">
+                        <p><strong>Name:</strong> ${result.name}</p>
+                        <p><strong>Index Number:</strong> ${result.index_number}</p>
+                        <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+                        ${result.message ? `<p><strong>Note:</strong> ${result.message}</p>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('successModal'));
+            modal.show();
+        }
+        
+        showErrorModal(title, message) {
+            const modalBody = document.getElementById('errorModalBody');
+            modalBody.innerHTML = `
+                <h6 class="text-danger">${title}</h6>
+                <p>${message}</p>
+                ${this.isIOS ? `
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>iOS Tip:</strong> Make sure Safari has camera access in Settings > Safari > Camera
+                    </div>
+                ` : ''}
+            `;
+            
+            const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+            modal.show();
+        }
+        
+        disableCameraForSession() {
+            this.stopCamera();
+            this.updateStatus('success', 'Attendance already marked for this session.');
+            
+            this.scanResults.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5>Attendance Already Marked</h5>
+                    <p class="text-muted">You have already marked attendance for this class session.</p>
+                    ${this.currentSessionId ? 
+                        `<p><small>Session ID: <code>${this.currentSessionId}</code></small></p>` : ''}
+                    <button class="btn btn-outline-primary mt-2" onclick="scanner.startCamera()">
+                        <i class="fas fa-redo"></i> Scan Again
+                    </button>
+                </div>
+            `;
+            
+            this.manualQRInput.disabled = true;
+            this.manualSubmit.disabled = true;
+        }
+        
+        async loadRecentAttendance() {
+            try {
+                this.recentAttendance.innerHTML = `
+                    <div class="text-center">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="sr-only">Loading...</span>
                         </div>
-                        <div class="recent-time">
-                            <small class="text-muted">${time}</small>
-                        </div>
+                        <p>Loading...</p>
                     </div>
                 `;
-            });
-            html += '</div>';
-            recentAttendance.innerHTML = html;
-        } catch (error) {
-            console.error('Error loading recent attendance:', error);
+                
+                const response = await fetch('/student/attendance/recent');
+                const records = await response.json();
+                
+                if (records.length === 0) {
+                    this.recentAttendance.innerHTML = `
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                            <p>No recent attendance records found.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '<div class="recent-list">';
+                records.forEach(record => {
+                    const time = new Date(record.scanned_at).toLocaleString();
+                    const course = record.class_sessions?.courses;
+                    html += `
+                        <div class="recent-item">
+                            <div class="recent-course">
+                                <strong>${course?.course_code || 'Unknown Course'}</strong>
+                                <span class="badge ${record.status === 'present' ? 'badge-success' : 'badge-warning'}">
+                                    ${record.status}
+                                </span>
+                            </div>
+                            <div class="recent-time">
+                                <small class="text-muted">${time}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                this.recentAttendance.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading recent attendance:', error);
+                this.recentAttendance.innerHTML = `
+                    <div class="text-center text-danger py-4">
+                        <i class="fas fa-exclamation-circle fa-3x mb-3"></i>
+                        <p>Failed to load attendance history.</p>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="scanner.loadRecentAttendance()">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    </div>
+                `;
+            }
         }
     }
     
-    // Event Listeners
-    startCameraBtn.addEventListener('click', () => startCamera());
-    stopCameraBtn.addEventListener('click', stopCamera);
-    
-    cameraSelect.addEventListener('change', (e) => {
-        if (e.target.value) {
-            stopCamera();
-            startCamera(e.target.value);
-        }
-    });
-    
-    manualSubmit.addEventListener('click', () => {
-        const qrCode = manualQRInput.value.trim();
-        if (qrCode) {
-            handleQRCode(qrCode);
-            manualQRInput.value = '';
-        }
-    });
-    
-    manualQRInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            manualSubmit.click();
-        }
-    });
-    
-    // Initialize
+    // Initialize scanner when page loads
+    let scanner;
     document.addEventListener('DOMContentLoaded', function() {
-        // Get available cameras
-        getCameraDevices();
+        scanner = new QRScanner();
+        scanner.loadRecentAttendance();
         
-        // Load recent attendance
-        loadRecentAttendance();
-        
-        // Check if already attended current session
-        checkCurrentSession();
-        
-        // Request camera permissions
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => {
-                stream.getTracks().forEach(track => track.stop());
-            })
-            .catch(() => {
-                // Camera permission not granted yet, that's okay
-            });
+        // Auto-start camera for Android devices (if permission already granted)
+        if (scanner.isAndroid) {
+            setTimeout(() => {
+                navigator.permissions.query({ name: 'camera' })
+                    .then(permissionStatus => {
+                        if (permissionStatus.state === 'granted') {
+                            scanner.startCamera();
+                        }
+                    })
+                    .catch(() => {
+                        // Permissions API not available
+                    });
+            }, 500);
+        }
     });
-    
-    async function checkCurrentSession() {
-        // This function would check if student has already attended current session
-        // For now, we'll just initialize
-        updateStatus('idle', 'Ready to scan QR code.');
-    }
-    
-    // Clean up when leaving page
-    window.addEventListener('beforeunload', stopCamera);
 </script>
-
-<style>
-    .already-attended {
-        text-align: center;
-        padding: 30px 0;
-    }
-    
-    .student-avatar-large {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        margin: 0 auto;
-        overflow: hidden;
-    }
-    
-    .avatar-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .recent-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .recent-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 15px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 3px solid #42b883;
-    }
-    
-    .recent-course {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .no-attendance {
-        text-align: center;
-        padding: 40px 0;
-        color: #6c757d;
-    }
-    
-    .alert-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-        padding: 12px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-</style>
 {% endblock %}
