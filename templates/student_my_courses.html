@@ -25,7 +25,7 @@
                     <i class="fas fa-calendar-alt text-success"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>{{ registered_courses|selectattr('courses.academic_year', 'equalto', '2024/2025')|list|length }}</h3>
+                    <h3>{{ registered_courses|selectattr('academic_year', 'equalto', '2024/2025')|list|length }}</h3>
                     <p>Current Year</p>
                 </div>
             </div>
@@ -39,8 +39,8 @@
                     <h3>
                         {% set unique_lecturers = [] %}
                         {% for reg in registered_courses %}
-                            {% if reg.courses.lecturers and reg.courses.lecturers.users %}
-                                {% set lecturer_name = reg.courses.lecturers.users.full_name %}
+                            {% if reg.lecturers and reg.lecturers.users %}
+                                {% set lecturer_name = reg.lecturers.users.full_name %}
                                 {% if lecturer_name not in unique_lecturers %}
                                     {% set _ = unique_lecturers.append(lecturer_name) %}
                                 {% endif %}
@@ -80,12 +80,12 @@
                 <div class="course-card-header">
                     <div class="course-code">
                         <i class="fas fa-hashtag"></i>
-                        <span>{{ reg.courses.course_code }}</span>
+                        <span>{{ reg.course_code }}</span>
                     </div>
                     <div class="course-actions">
                         <form method="post" 
                               action="/student/unregister-course/{{ reg.id }}" 
-                              onsubmit="return confirmUnregister('{{ reg.courses.course_code }}')">
+                              onsubmit="return confirmUnregister('{{ reg.course_code }}')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
@@ -96,7 +96,7 @@
                 <div class="course-card-body">
                     <h4 class="course-title">
                         <i class="fas fa-book mr-2"></i>
-                        {{ reg.courses.course_title }}
+                        {{ reg.course_title }}
                     </h4>
                     
                     <div class="course-details">
@@ -104,7 +104,7 @@
                             <i class="fas fa-calendar"></i>
                             <div class="detail-content">
                                 <span class="detail-label">Academic Year</span>
-                                <span class="detail-value">{{ reg.courses.academic_year }}</span>
+                                <span class="detail-value">{{ reg.academic_year }}</span>
                             </div>
                         </div>
                         
@@ -112,7 +112,7 @@
                             <i class="fas fa-layer-group"></i>
                             <div class="detail-content">
                                 <span class="detail-label">Semester</span>
-                                <span class="detail-value">Semester {{ reg.courses.semester }}</span>
+                                <span class="detail-value">Semester {{ reg.semester }}</span>
                             </div>
                         </div>
                         
@@ -121,8 +121,8 @@
                             <div class="detail-content">
                                 <span class="detail-label">Lecturer</span>
                                 <span class="detail-value">
-                                    {% if reg.courses.lecturers and reg.courses.lecturers.users %}
-                                        {{ reg.courses.lecturers.users.full_name }}
+                                    {% if reg.lecturers and reg.lecturers.users %}
+                                        {{ reg.lecturers.users.full_name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
@@ -135,20 +135,12 @@
                             <div class="detail-content">
                                 <span class="detail-label">Registered On</span>
                                 <span class="detail-value registered-date">
-    {% if reg.registered_at %}
-        {{ reg.registered_at|datetimeformat('medium') }}
-    {% else %}
-        Unknown
-    {% endif %}
-</span>
-
-<h3>
-    {% if registered_courses %}
-        {{ registered_courses|sort(attribute='registered_at')|first|attr('registered_at')|datetimeformat('short') if registered_courses|sort(attribute='registered_at')|first|attr('registered_at') else 'N/A' }}
-    {% else %}
-        N/A
-    {% endif %}
-</h3>
+                                    {% if reg.registered_at %}
+                                        {{ reg.registered_at|datetimeformat('medium') }}
+                                    {% else %}
+                                        Unknown
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -158,7 +150,7 @@
                     <a href="/student/scan" class="btn btn-success btn-block mb-2">
                         <i class="fas fa-qrcode"></i> Scan Attendance
                     </a>
-                    <a href="/student/attendance?course={{ reg.courses.id }}" class="btn btn-info btn-block">
+                    <a href="/student/attendance?course={{ reg.id }}" class="btn btn-info btn-block">
                         <i class="fas fa-chart-bar"></i> View History
                     </a>
                 </div>
@@ -187,6 +179,8 @@
     </div>
     {% endif %}
 </div>
+
+<!-- ... rest of the CSS and JS remains the same ... -->
 
 <style>
     .container-fluid {
