@@ -6,67 +6,68 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Stats Cards -->
+    <!-- Stats Cards (slightly smaller) -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
                 <div class="stats-icon">
                     <i class="fas fa-book-open text-primary"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>{{ registered_courses|length }}</h3>
+                    <h4>{{ registered_courses|length }}</h4>
                     <p>Total Courses</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
                 <div class="stats-icon">
                     <i class="fas fa-calendar-alt text-success"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>
+                    <h4>
                         {% set current_year_courses = [] %}
                         {% for reg in registered_courses %}
-                            {% if reg.courses and reg.courses.academic_year == '2024/2025' %}
+                            {% if (reg.courses and reg.courses.academic_year == '2024/2025') or (reg.course and reg.course.academic_year == '2024/2025') %}
                                 {% set _ = current_year_courses.append(reg) %}
                             {% endif %}
                         {% endfor %}
                         {{ current_year_courses|length }}
-                    </h3>
+                    </h4>
                     <p>Current Year</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
                 <div class="stats-icon">
                     <i class="fas fa-user-graduate text-warning"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>
+                    <h4>
                         {% set unique_lecturers = [] %}
                         {% for reg in registered_courses %}
-                            {% if reg.courses and reg.courses.lecturers and reg.courses.lecturers.users %}
-                                {% set lecturer_name = reg.courses.lecturers.users.full_name %}
+                            {% set lecturer = reg.courses.lecturers if reg.courses and reg.courses.lecturers else (reg.course.lecturers if reg.course and reg.course.lecturers else None) %}
+                            {% if lecturer and lecturer.users %}
+                                {% set lecturer_name = lecturer.users.full_name %}
                                 {% if lecturer_name not in unique_lecturers %}
                                     {% set _ = unique_lecturers.append(lecturer_name) %}
                                 {% endif %}
                             {% endif %}
                         {% endfor %}
                         {{ unique_lecturers|length }}
-                    </h3>
+                    </h4>
                     <p>Lecturers</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
                 <div class="stats-icon">
                     <i class="fas fa-clock text-info"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>
+                    <h4>
                         {% if registered_courses %}
                             {% set first_reg = registered_courses|sort(attribute='registered_at')|first %}
                             {% if first_reg and first_reg.registered_at %}
@@ -77,18 +78,21 @@
                         {% else %}
                             N/A
                         {% endif %}
-                    </h3>
+                    </h4>
                     <p>First Registration</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Courses Grid -->
+    <!-- Hidden debug info (you can remove later) -->
+    <div style="display: none;" id="debug-data">{{ registered_courses|tojson }}</div>
+
+    <!-- Courses Grid – smaller tiles -->
     {% if registered_courses %}
     <div class="row">
         {% for reg in registered_courses %}
-        <div class="col-lg-4 col-md-6 mb-4">
+        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
             <div class="card course-card">
                 <div class="course-card-header">
                     <div class="course-code">
@@ -96,6 +100,8 @@
                         <span>
                             {% if reg.courses and reg.courses.course_code %}
                                 {{ reg.courses.course_code }}
+                            {% elif reg.course and reg.course.course_code %}
+                                {{ reg.course.course_code }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -104,7 +110,7 @@
                     <div class="course-actions">
                         <form method="post" 
                               action="/student/unregister-course/{{ reg.id }}" 
-                              onsubmit="return confirmUnregister('{{ reg.courses.course_code if reg.courses and reg.courses.course_code else 'this course' }}')">
+                              onsubmit="return confirmUnregister('{{ reg.courses.course_code if reg.courses and reg.courses.course_code else (reg.course.course_code if reg.course and reg.course.course_code else 'this course') }}')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
@@ -113,23 +119,27 @@
                 </div>
                 
                 <div class="course-card-body">
-                    <h4 class="course-title">
+                    <h5 class="course-title">
                         <i class="fas fa-book mr-2"></i>
                         {% if reg.courses and reg.courses.course_title %}
                             {{ reg.courses.course_title }}
+                        {% elif reg.course and reg.course.course_title %}
+                            {{ reg.course.course_title }}
                         {% else %}
-                            <span class="text-danger">Course details not available</span>
+                            <span class="text-danger">Not available</span>
                         {% endif %}
-                    </h4>
+                    </h5>
                     
                     <div class="course-details">
                         <div class="detail-item">
                             <i class="fas fa-calendar"></i>
                             <div class="detail-content">
-                                <span class="detail-label">Academic Year</span>
+                                <span class="detail-label">Year</span>
                                 <span class="detail-value">
                                     {% if reg.courses and reg.courses.academic_year %}
                                         {{ reg.courses.academic_year }}
+                                    {% elif reg.course and reg.course.academic_year %}
+                                        {{ reg.course.academic_year }}
                                     {% else %}
                                         N/A
                                     {% endif %}
@@ -142,9 +152,10 @@
                             <div class="detail-content">
                                 <span class="detail-label">Semester</span>
                                 <span class="detail-value">
-                                    Semester 
                                     {% if reg.courses and reg.courses.semester %}
-                                        {{ reg.courses.semester }}
+                                        Sem {{ reg.courses.semester }}
+                                    {% elif reg.course and reg.course.semester %}
+                                        Sem {{ reg.course.semester }}
                                     {% else %}
                                         N/A
                                     {% endif %}
@@ -157,8 +168,9 @@
                             <div class="detail-content">
                                 <span class="detail-label">Lecturer</span>
                                 <span class="detail-value">
-                                    {% if reg.courses and reg.courses.lecturers and reg.courses.lecturers.users %}
-                                        {{ reg.courses.lecturers.users.full_name }}
+                                    {% set lecturer = reg.courses.lecturers if reg.courses and reg.courses.lecturers else (reg.course.lecturers if reg.course and reg.course.lecturers else None) %}
+                                    {% if lecturer and lecturer.users %}
+                                        {{ lecturer.users.full_name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
@@ -169,7 +181,7 @@
                         <div class="detail-item">
                             <i class="fas fa-calendar-check"></i>
                             <div class="detail-content">
-                                <span class="detail-label">Registered On</span>
+                                <span class="detail-label">Registered</span>
                                 <span class="detail-value registered-date">
                                     {% if reg.registered_at %}
                                         {{ reg.registered_at|datetimeformat('medium') }}
@@ -183,11 +195,11 @@
                 </div>
                 
                 <div class="course-card-footer">
-                    <a href="/student/scan" class="btn btn-success btn-block mb-2">
-                        <i class="fas fa-qrcode"></i> Scan Attendance
+                    <a href="/student/scan" class="btn btn-success btn-sm btn-block mb-1">
+                        <i class="fas fa-qrcode"></i> Scan
                     </a>
-                    <a href="/student/attendance?course={{ reg.courses.id if reg.courses else reg.course_id }}" class="btn btn-info btn-block">
-                        <i class="fas fa-chart-bar"></i> View History
+                    <a href="/student/attendance?course={{ reg.courses.id if reg.courses else (reg.course.id if reg.course else reg.course_id) }}" class="btn btn-info btn-sm btn-block">
+                        <i class="fas fa-chart-bar"></i> History
                     </a>
                 </div>
             </div>
@@ -201,7 +213,7 @@
             <div class="empty-state-icon">
                 <i class="fas fa-book-open fa-4x"></i>
             </div>
-            <h3>No Courses Registered</h3>
+            <h4>No Courses Registered</h4>
             <p class="text-muted">You haven't registered for any courses yet.</p>
             <div class="empty-state-actions">
                 <a href="/student/browse-courses" class="btn btn-primary">
@@ -217,192 +229,121 @@
 </div>
 
 <style>
-    .container-fluid {
-        padding: 0;
-    }
+    .container-fluid { padding: 0; }
     
+    /* Smaller stats cards */
     .stats-card {
         text-align: center;
-        padding: 25px;
+        padding: 15px 10px;
         border: none;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.2s;
+        height: 100%;
     }
+    .stats-card:hover { transform: translateY(-3px); }
+    .stats-icon { font-size: 1.8rem; margin-bottom: 8px; opacity: 0.8; }
+    .stats-content h4 { margin: 0; font-size: 1.5rem; color: #333; }
+    .stats-content p { margin: 3px 0 0; color: #666; font-size: 0.8rem; }
     
-    .stats-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .stats-icon {
-        font-size: 2.5rem;
-        margin-bottom: 15px;
-        opacity: 0.8;
-    }
-    
-    .stats-content h3 {
-        margin: 0;
-        font-size: 2rem;
-        color: #333;
-    }
-    
-    .stats-content p {
-        margin: 5px 0 0 0;
-        color: #666;
-        font-size: 0.9rem;
-    }
-    
+    /* Smaller course cards */
     .course-card {
         border: none;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        transition: all 0.2s;
         height: 100%;
         display: flex;
         flex-direction: column;
     }
-    
     .course-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        transform: translateY(-4px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.1);
     }
-    
     .course-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 20px 20px 0 20px;
-        margin-bottom: 15px;
+        padding: 12px 12px 0;
+        margin-bottom: 8px;
     }
-    
     .course-code {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
+        padding: 4px 10px;
+        border-radius: 15px;
         font-weight: 600;
-        font-size: 0.9rem;
+        font-size: 0.75rem;
     }
-    
-    .course-card-body {
-        padding: 0 20px;
-        flex-grow: 1;
-    }
-    
+    .course-card-body { padding: 0 12px; flex-grow: 1; }
     .course-title {
-        font-size: 1.2rem;
+        font-size: 1rem;
         color: #333;
-        margin-bottom: 20px;
+        margin-bottom: 12px;
         display: flex;
         align-items: center;
+        font-weight: 600;
+        line-height: 1.3;
+        min-height: 2.6rem;
     }
-    
     .course-details {
         background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 12px;
     }
-    
     .detail-item {
         display: flex;
         align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 15px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
         border-bottom: 1px solid #eaeaea;
     }
-    
     .detail-item:last-child {
         border-bottom: none;
         margin-bottom: 0;
         padding-bottom: 0;
     }
-    
     .detail-item i {
-        width: 30px;
+        width: 20px;
         color: #667eea;
-        font-size: 1.1rem;
+        font-size: 0.9rem;
     }
-    
-    .detail-content {
-        flex: 1;
-    }
-    
+    .detail-content { flex: 1; }
     .detail-label {
         display: block;
         color: #666;
-        font-size: 0.85rem;
-        margin-bottom: 3px;
+        font-size: 0.7rem;
+        margin-bottom: 2px;
     }
-    
     .detail-value {
         display: block;
         color: #333;
         font-weight: 600;
-        font-size: 0.95rem;
+        font-size: 0.8rem;
+        line-height: 1.2;
     }
-    
     .course-card-footer {
-        padding: 20px;
+        padding: 12px;
         border-top: 1px solid #eaeaea;
         margin-top: auto;
     }
+    .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
+    .btn-block { width: 100%; margin-bottom: 5px; }
     
-    .btn-block {
-        width: 100%;
-        margin-bottom: 10px;
-    }
-    
-    .btn-block:last-child {
-        margin-bottom: 0;
-    }
-    
-    .btn-sm {
-        padding: 6px 12px;
-        font-size: 0.85rem;
-    }
-    
+    /* Empty state */
     .empty-state-card {
         text-align: center;
-        padding: 60px 40px;
+        padding: 40px 20px;
         border: 2px dashed #dee2e6;
         background: #f8f9fa;
     }
+    .empty-state-icon { color: #adb5bd; margin-bottom: 20px; }
+    .empty-state-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     
-    .empty-state-icon {
-        color: #adb5bd;
-        margin-bottom: 25px;
-    }
-    
-    .empty-state-card h3 {
-        color: #495057;
-        margin-bottom: 10px;
-    }
-    
-    .empty-state-actions {
-        margin-top: 30px;
-        display: flex;
-        gap: 15px;
-        justify-content: center;
-    }
-    
-    .mr-2 {
-        margin-right: 8px;
-    }
-    
-    .mb-2 {
-        margin-bottom: 10px;
-    }
-    
-    .mb-4 {
-        margin-bottom: 30px;
-    }
-    
-    .text-primary { color: #667eea !important; }
-    .text-success { color: #42b883 !important; }
-    .text-warning { color: #ffa726 !important; }
-    .text-info { color: #29b6f6 !important; }
+    /* Utility */
+    .mb-3 { margin-bottom: 1rem; }
     .text-muted { color: #6c757d !important; }
     .text-danger { color: #dc3545 !important; }
 </style>
@@ -412,24 +353,19 @@
         return confirm(`Are you sure you want to unregister from ${courseCode}?\n\nThis action cannot be undone.`);
     }
     
-    // Format dates on page load
+    // Format dates
     document.addEventListener('DOMContentLoaded', function() {
-        const dateElements = document.querySelectorAll('.registered-date');
-        dateElements.forEach(el => {
+        document.querySelectorAll('.registered-date').forEach(el => {
             const text = el.textContent.trim();
             if (text && text !== 'Unknown') {
                 try {
                     const date = new Date(text);
                     if (!isNaN(date)) {
                         el.textContent = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
+                            year: 'numeric', month: 'short', day: 'numeric'
                         });
                     }
-                } catch (e) {
-                    console.log('Date formatting error:', e);
-                }
+                } catch (e) {}
             }
         });
     });
