@@ -24,7 +24,7 @@
                     <h4>
                         {% set count = 0 %}
                         {% for reg in registered_courses %}
-                            {% if reg.course and reg.course.academic_year == '2024/2025' %}
+                            {% if reg.course and reg.course.academic_year == '2025/2026' %}
                                 {% set count = count + 1 %}
                             {% endif %}
                         {% endfor %}
@@ -64,17 +64,6 @@
                     <p>First Registration</p>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Debug info (remove after fixing) -->
-    <div class="alert alert-info small p-2 mb-3">
-        <strong>Debug:</strong> 
-        <button class="btn btn-sm btn-outline-primary py-0" type="button" data-toggle="collapse" data-target="#debugData">
-            Show Raw Data
-        </button>
-        <div class="collapse mt-2" id="debugData">
-            <pre class="bg-dark text-white p-2 rounded" style="font-size: 0.7rem;">{{ registered_courses|tojson(indent=2) }}</pre>
         </div>
     </div>
 
@@ -167,6 +156,10 @@
         border-radius: 20px;
         font-size: 0.7rem;
         font-weight: 600;
+        max-width: 70%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
     .btn-xs { padding: 2px 6px; font-size: 0.7rem; }
     
@@ -219,17 +212,4 @@
     .mb-1 { margin-bottom: 0.25rem; }
     .w-100 { width: 100%; }
 </style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Format registered dates if needed
-        document.querySelectorAll('[data-date]').forEach(el => {
-            try {
-                el.textContent = new Date(el.textContent).toLocaleDateString('en-US', {
-                    month: 'short', day: 'numeric', year: 'numeric'
-                });
-            } catch(e){}
-        });
-    });
-</script>
 {% endblock %}
