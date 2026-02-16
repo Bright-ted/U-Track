@@ -1743,38 +1743,55 @@ def student_my_courses():
     
     student_id = session["user_id"]
     
-    # Get all registered courses with details – use explicit foreign key
-    registered_courses = (
+    # First, get all registrations
+    registrations = (
         supabase
         .table("course_registration")
-        .select("""
-            id,
-            registered_at,
-            course_id,
-            courses!course_registration_course_id_fkey (
-                id,
-                course_code,
-                course_title,
-                academic_year,
-                semester,
-                lecturers (
-                    users (
-                        full_name,
-                        profile_photo_url
-                    )
-                )
-            )
-        """)
+        .select("id, registered_at, course_id")
         .eq("student_id", student_id)
         .order("registered_at", desc=True)
         .execute()
         .data
     )
     
+    # Then manually fetch course details for each registration
+    registered_courses = []
+    for reg in registrations:
+        # Get course details
+        course = (
+            supabase
+            .table("courses")
+            .select("""
+                id,
+                course_code,
+                course_title,
+                academic_year,
+                semester,
+                lecturers!inner(
+                    users!inner(
+                        full_name,
+                        profile_photo_url
+                    )
+                )
+            """)
+            .eq("id", reg["course_id"])
+            .single()
+            .execute()
+            .data
+        )
+        
+        if course:
+            registered_courses.append({
+                "id": reg["id"],
+                "registered_at": reg["registered_at"],
+                "course": course  # Embed course directly
+            })
+    
     return render_template(
         "student_my_courses.html",
         registered_courses=registered_courses
     )
+
 # Add this route for deleting a registered course
 @app.route("/student/unregister-course/<registration_id>", methods=["POST"])
 def unregister_course(registration_id):
