@@ -25,7 +25,15 @@
                     <i class="fas fa-calendar-alt text-success"></i>
                 </div>
                 <div class="stats-content">
-                    <h3>{{ registered_courses|selectattr('academic_year', 'equalto', '2024/2025')|list|length }}</h3>
+                    <h3>
+                        {% set current_year_courses = [] %}
+                        {% for reg in registered_courses %}
+                            {% if reg.courses and reg.courses.academic_year == '2024/2025' %}
+                                {% set _ = current_year_courses.append(reg) %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ current_year_courses|length }}
+                    </h3>
                     <p>Current Year</p>
                 </div>
             </div>
@@ -39,9 +47,8 @@
                     <h3>
                         {% set unique_lecturers = [] %}
                         {% for reg in registered_courses %}
-                            {% set lecturer = reg.course.lecturers if reg.course and reg.course.lecturers else reg.lecturers %}
-                            {% if lecturer and lecturer.users %}
-                                {% set lecturer_name = lecturer.users.full_name %}
+                            {% if reg.courses and reg.courses.lecturers and reg.courses.lecturers.users %}
+                                {% set lecturer_name = reg.courses.lecturers.users.full_name %}
                                 {% if lecturer_name not in unique_lecturers %}
                                     {% set _ = unique_lecturers.append(lecturer_name) %}
                                 {% endif %}
@@ -77,20 +84,6 @@
         </div>
     </div>
 
-    <!-- DEBUG: Add this temporarily to see the data structure -->
-    <div class="alert alert-info mb-4">
-        <h4>🔍 Debug Info - First Course Data Structure:</h4>
-        <button class="btn btn-sm btn-primary" type="button" data-toggle="collapse" data-target="#debugData" aria-expanded="false" aria-controls="debugData">
-            Toggle Debug View
-        </button>
-        <div class="collapse mt-3" id="debugData">
-            <div class="card card-body bg-dark text-white">
-                <pre style="color: #fff; background: #333; padding: 15px; border-radius: 5px; overflow-x: auto;">{{ registered_courses[0] | tojson(indent=2) if registered_courses else 'No courses found' }}</pre>
-            </div>
-            <p class="mt-2"><strong>Total courses:</strong> {{ registered_courses|length }}</p>
-        </div>
-    </div>
-
     <!-- Courses Grid -->
     {% if registered_courses %}
     <div class="row">
@@ -101,14 +94,8 @@
                     <div class="course-code">
                         <i class="fas fa-hashtag"></i>
                         <span>
-                            {% if reg.course and reg.course.course_code %}
-                                {{ reg.course.course_code }}
-                            {% elif reg.course_code %}
-                                {{ reg.course_code }}
-                            {% elif reg.course and reg.course.code %}
-                                {{ reg.course.code }}
-                            {% elif reg.code %}
-                                {{ reg.code }}
+                            {% if reg.courses and reg.courses.course_code %}
+                                {{ reg.courses.course_code }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -117,7 +104,7 @@
                     <div class="course-actions">
                         <form method="post" 
                               action="/student/unregister-course/{{ reg.id }}" 
-                              onsubmit="return confirmUnregister('{{ reg.course.course_code if reg.course and reg.course.course_code else reg.course_code }}')">
+                              onsubmit="return confirmUnregister('{{ reg.courses.course_code if reg.courses and reg.courses.course_code else 'this course' }}')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
@@ -128,20 +115,10 @@
                 <div class="course-card-body">
                     <h4 class="course-title">
                         <i class="fas fa-book mr-2"></i>
-                        {% if reg.course and reg.course.course_title %}
-                            {{ reg.course.course_title }}
-                        {% elif reg.course_title %}
-                            {{ reg.course_title }}
-                        {% elif reg.course and reg.course.title %}
-                            {{ reg.course.title }}
-                        {% elif reg.title %}
-                            {{ reg.title }}
-                        {% elif reg.course and reg.course.name %}
-                            {{ reg.course.name }}
-                        {% elif reg.name %}
-                            {{ reg.name }}
+                        {% if reg.courses and reg.courses.course_title %}
+                            {{ reg.courses.course_title }}
                         {% else %}
-                            <span class="text-danger">Course name not available</span>
+                            <span class="text-danger">Course details not available</span>
                         {% endif %}
                     </h4>
                     
@@ -151,10 +128,8 @@
                             <div class="detail-content">
                                 <span class="detail-label">Academic Year</span>
                                 <span class="detail-value">
-                                    {% if reg.course and reg.course.academic_year %}
-                                        {{ reg.course.academic_year }}
-                                    {% elif reg.academic_year %}
-                                        {{ reg.academic_year }}
+                                    {% if reg.courses and reg.courses.academic_year %}
+                                        {{ reg.courses.academic_year }}
                                     {% else %}
                                         N/A
                                     {% endif %}
@@ -168,10 +143,8 @@
                                 <span class="detail-label">Semester</span>
                                 <span class="detail-value">
                                     Semester 
-                                    {% if reg.course and reg.course.semester %}
-                                        {{ reg.course.semester }}
-                                    {% elif reg.semester %}
-                                        {{ reg.semester }}
+                                    {% if reg.courses and reg.courses.semester %}
+                                        {{ reg.courses.semester }}
                                     {% else %}
                                         N/A
                                     {% endif %}
@@ -184,13 +157,8 @@
                             <div class="detail-content">
                                 <span class="detail-label">Lecturer</span>
                                 <span class="detail-value">
-                                    {% set lecturer = reg.course.lecturers if reg.course and reg.course.lecturers else reg.lecturers %}
-                                    {% if lecturer and lecturer.users %}
-                                        {{ lecturer.users.full_name }}
-                                    {% elif lecturer and lecturer.full_name %}
-                                        {{ lecturer.full_name }}
-                                    {% elif lecturer and lecturer.name %}
-                                        {{ lecturer.name }}
+                                    {% if reg.courses and reg.courses.lecturers and reg.courses.lecturers.users %}
+                                        {{ reg.courses.lecturers.users.full_name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
@@ -218,7 +186,7 @@
                     <a href="/student/scan" class="btn btn-success btn-block mb-2">
                         <i class="fas fa-qrcode"></i> Scan Attendance
                     </a>
-                    <a href="/student/attendance?course={{ reg.course.id if reg.course and reg.course.id else reg.id }}" class="btn btn-info btn-block">
+                    <a href="/student/attendance?course={{ reg.courses.id if reg.courses else reg.course_id }}" class="btn btn-info btn-block">
                         <i class="fas fa-chart-bar"></i> View History
                     </a>
                 </div>
@@ -436,18 +404,7 @@
     .text-warning { color: #ffa726 !important; }
     .text-info { color: #29b6f6 !important; }
     .text-muted { color: #6c757d !important; }
-    
-    /* Debug styles */
-    .bg-dark {
-        background-color: #1e1e1e !important;
-    }
-    .text-white {
-        color: #fff !important;
-    }
-    pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-    }
+    .text-danger { color: #dc3545 !important; }
 </style>
 
 <script>
