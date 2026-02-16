@@ -1,496 +1,215 @@
 {% extends "base_student.html" %}
 
 {% block title %}My Registered Courses{% endblock %}
-{% block page_title %}My Learning Dashboard{% endblock %}
-{% block page_subtitle %}Track and manage your course registrations{% endblock %}
+{% block page_title %}My Registered Courses{% endblock %}
+{% block page_subtitle %}Manage your course registrations{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-4">
-    <!-- Stats Cards - Modern glassmorphism design -->
-    <div class="row g-3 mb-5">
+<div class="container-fluid px-3">
+    <!-- Stats Cards - smaller -->
+    <div class="row g-2 mb-4">
         <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon-wrapper bg-primary-soft">
-                    <i class="fas fa-book-open text-primary"></i>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-label">Total Courses</span>
-                    <h3 class="stat-value">{{ registered_courses|length }}</h3>
+            <div class="card stats-card">
+                <div class="stats-icon"><i class="fas fa-book-open text-primary"></i></div>
+                <div class="stats-content">
+                    <h4>{{ registered_courses|length }}</h4>
+                    <p>Total Courses</p>
                 </div>
             </div>
         </div>
-        
-                
-
         <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon-wrapper bg-info-soft">
-                    <i class="fas fa-clock text-info"></i>
+            <div class="card stats-card">
+                <div class="stats-icon"><i class="fas fa-calendar-alt text-success"></i></div>
+                <div class="stats-content">
+                    <h4>
+                        {% set count = 0 %}
+                        {% for reg in registered_courses %}
+                            {% if reg.course and reg.course.academic_year == '2025/2026' %}
+                                {% set count = count + 1 %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ count }}
+                    </h4>
+                    <p>Current Year</p>
                 </div>
-                <div class="stat-content">
-                    <span class="stat-label">First Registration</span>
-                    <h3 class="stat-value small-value">
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon"><i class="fas fa-user-graduate text-warning"></i></div>
+                <div class="stats-content">
+                    <h4>
+                        {% set lecturers = [] %}
+                        {% for reg in registered_courses %}
+                            {% if reg.course and reg.course.lecturers and reg.course.lecturers.users and reg.course.lecturers.users.full_name not in lecturers %}
+                                {% set _ = lecturers.append(reg.course.lecturers.users.full_name) %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ lecturers|length }}
+                    </h4>
+                    <p>Lecturers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card stats-card">
+                <div class="stats-icon"><i class="fas fa-clock text-info"></i></div>
+                <div class="stats-content">
+                    <h4>
                         {% if registered_courses %}
                             {% set first = registered_courses|sort(attribute='registered_at')|first %}
-                            {{ first.registered_at|datetimeformat('date') if first.registered_at else 'N/A' }}
+                            {{ first.registered_at|datetimeformat if first.registered_at else 'N/A' }}
                         {% else %}N/A{% endif %}
-                    </h3>
+                    </h4>
+                    <p>First Registration</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Course Grid - Modern card design -->
+    <!-- Course Grid - Square cards -->
     {% if registered_courses %}
-    <div class="section-header mb-4">
-        <h4 class="section-title">Your Courses</h4>
-        <p class="section-subtitle">You have {{ registered_courses|length }} active course registrations</p>
-    </div>
-    
-    <div class="row g-4">
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-2">
         {% for reg in registered_courses %}
         {% set course = reg.course %}
-        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-            <div class="course-card">
-                <!-- Card Header with Gradient -->
-                <div class="card-gradient-header" style="background: linear-gradient(135deg, #4158D0 0%, #C850C0 100%);">
-                    <span class="course-code">{{ course.course_code if course else 'N/A' }}</span>
+        <div class="col">
+            <div class="card course-card">
+                <div class="course-header">
+                    <span class="course-badge">{{ course.course_code if course else 'N/A' }}</span>
                     <form method="post" action="/student/unregister-course/{{ reg.id }}" 
                           onsubmit="return confirm('Remove {{ course.course_code if course else 'this course' }}?')">
-                        <button type="submit" class="btn-remove">
+                        <button type="submit" class="btn btn-outline-danger btn-xs">
                             <i class="fas fa-times"></i>
                         </button>
                     </form>
                 </div>
-                
-                <!-- Card Body -->
-                <div class="card-body">
-                    <h5 class="course-title">{{ course.course_title if course else 'Not available' }}</h5>
-                    
-                    <!-- Course Details Grid -->
-                    <div class="details-grid">
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="far fa-calendar-alt"></i>
-                            </div>
-                            <div class="detail-text">
-                                <span class="detail-label">Academic Year</span>
-                                <span class="detail-value">{{ course.academic_year if course else 'N/A' }}</span>
-                            </div>
+                <div class="course-body">
+                    <div class="course-title">{{ course.course_title if course else 'Not available' }}</div>
+                    <div class="course-meta">
+                        <div><i class="fas fa-calendar-alt"></i> {{ course.academic_year if course else 'N/A' }}</div>
+                        <div><i class="fas fa-layer-group"></i> Sem {{ course.semester if course else 'N/A' }}</div>
+                        <div><i class="fas fa-chalkboard-teacher"></i> 
+                            {% if course and course.lecturers and course.lecturers.users %}
+                                {{ course.lecturers.users.full_name }}
+                            {% else %}
+                                <span class="text-muted">Not assigned</span>
+                            {% endif %}
                         </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="far fa-clock"></i>
-                            </div>
-                            <div class="detail-text">
-                                <span class="detail-label">Semester</span>
-                                <span class="detail-value">Sem {{ course.semester if course else 'N/A' }}</span>
-                            </div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                            </div>
-                            
-                        
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="far fa-calendar-check"></i>
-                            </div>
-                            <div class="detail-text">
-                                <span class="detail-label">Registered</span>
-                                <span class="detail-value">{{ reg.registered_at|datetimeformat('date') }}</span>
-                            </div>
-                        </div>
+                        <div><i class="fas fa-clock"></i> {{ reg.registered_at|datetimeformat('date') }}</div>
                     </div>
                 </div>
-                
-                <!-- Card Footer with Actions -->
-                <div class="card-footer">
-                    <a href="/student/scan" class="btn-action btn-scan">
-                        <i class="fas fa-qrcode"></i>
-                        <span>Scan QR</span>
-                    </a>
-                    <a href="/student/attendance?course={{ course.id if course else '' }}" class="btn-action btn-history">
-                        <i class="fas fa-chart-line"></i>
-                        <span>History</span>
-                    </a>
+                <div class="course-footer">
+                    <a href="/student/scan" class="btn btn-success btn-sm w-100 mb-1">Scan</a>
+                    <a href="/student/attendance?course={{ course.id if course else '' }}" class="btn btn-info btn-sm w-100">History</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
     {% else %}
-    <!-- Modern Empty State -->
-    <div class="empty-state-wrapper">
-        <div class="empty-state-content">
-            <div class="empty-icon-wrapper">
-                <i class="fas fa-books"></i>
-            </div>
-            <h3 class="empty-title">No courses registered yet</h3>
-            <p class="empty-description">Browse our catalog and register for courses that interest you</p>
-            <a href="/student/browse-courses" class="btn-explore">
-                <i class="fas fa-compass me-2"></i>
-                Explore Courses
-            </a>
-        </div>
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-book-open fa-3x mb-3 text-muted"></i>
+        <h5>No Courses Registered</h5>
+        <p class="text-muted small">Browse available courses to register</p>
+        <a href="/student/browse-courses" class="btn btn-primary btn-sm">Browse Courses</a>
     </div>
     {% endif %}
 </div>
 
 <style>
-    /* Modern CSS Variables */
-    :root {
-        --primary: #4158D0;
-        --primary-gradient: linear-gradient(135deg, #4158D0, #C850C0);
-        --success: #10b981;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-        --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.1);
-        --shadow-hover: 0 20px 30px -10px rgba(0,0,0,0.15);
-        --radius-lg: 24px;
-        --radius-md: 16px;
-        --radius-sm: 12px;
-    }
-
-    /* Stats Cards - Modern Minimalist */
-    .stat-card {
-        background: white;
-        border-radius: var(--radius-md);
-        padding: 1.5rem 1rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: var(--shadow-sm);
-        transition: all 0.3s ease;
-        height: 100%;
-        border: 1px solid rgba(0,0,0,0.02);
-    }
-
-    .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-        border-color: transparent;
-    }
-
-    .stat-icon-wrapper {
-        width: 48px;
-        height: 48px;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-    }
-
-    .bg-primary-soft { background: rgba(65, 88, 208, 0.1); }
-    .bg-success-soft { background: rgba(16, 185, 129, 0.1); }
-    .bg-warning-soft { background: rgba(245, 158, 11, 0.1); }
-    .bg-info-soft { background: rgba(59, 130, 246, 0.1); }
-
-    .stat-content {
-        flex: 1;
-    }
-
-    .stat-label {
-        display: block;
-        font-size: 0.875rem;
-        color: var(--gray-600);
-        margin-bottom: 0.25rem;
-        font-weight: 500;
-    }
-
-    .stat-value {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin: 0;
-        line-height: 1.2;
-    }
-
-    .small-value {
-        font-size: 1.2rem;
-    }
-
-    /* Section Headers */
-    .section-header {
-        padding-left: 0.5rem;
-        border-left: 4px solid var(--primary);
-    }
-
-    .section-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin-bottom: 0.25rem;
-    }
-
-    .section-subtitle {
-        color: var(--gray-600);
-        font-size: 0.95rem;
-        margin: 0;
-    }
-
-    /* Modern Course Cards */
-    .course-card {
-        background: white;
-        border-radius: var(--radius-lg);
-        overflow: hidden;
-        box-shadow: var(--shadow-md);
-        transition: all 0.3s ease;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid rgba(0,0,0,0.05);
-        position: relative;
-    }
-
-    .course-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-hover);
-    }
-
-    .card-gradient-header {
-        padding: 1.5rem 1rem 3rem;
-        position: relative;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .course-code {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        color: white;
-        padding: 0.35rem 1rem;
-        border-radius: 30px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    .btn-remove {
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border: none;
-        color: white;
-        width: 30px;
-        height: 30px;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-    }
-
-    .btn-remove:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: rotate(90deg);
-    }
-
-    .card-body {
-        padding: 1.5rem 1rem 1rem;
-        margin-top: -2rem;
-        background: white;
-        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-        flex: 1;
-    }
-
-    .course-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin-bottom: 1.25rem;
-        line-height: 1.4;
-        min-height: 3rem;
-    }
-
-    .details-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .detail-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .detail-icon {
-        width: 28px;
-        height: 28px;
-        border-radius: 10px;
-        background: var(--gray-50);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-        font-size: 0.85rem;
-    }
-
-    .detail-text {
-        flex: 1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.9rem;
-    }
-
-    .detail-label {
-        color: var(--gray-600);
-        font-weight: 500;
-    }
-
-    .detail-value {
-        color: var(--gray-800);
-        font-weight: 600;
-    }
-
-    .card-footer {
-        padding: 1rem;
-        display: flex;
-        gap: 0.75rem;
-        border-top: 1px solid var(--gray-100);
-        background: var(--gray-50);
-    }
-
-    .btn-action {
-        flex: 1;
-        padding: 0.6rem;
-        border-radius: 12px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-scan {
-        background: white;
-        color: var(--primary);
-        border: 1px solid rgba(65, 88, 208, 0.2);
-    }
-
-    .btn-scan:hover {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-        transform: scale(1.02);
-    }
-
-    .btn-history {
-        background: white;
-        color: var(--info);
-        border: 1px solid rgba(59, 130, 246, 0.2);
-    }
-
-    .btn-history:hover {
-        background: var(--info);
-        color: white;
-        border-color: var(--info);
-        transform: scale(1.02);
-    }
-
-    /* Modern Empty State */
-    .empty-state-wrapper {
-        min-height: 60vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem;
-    }
-
-    .empty-state-content {
+    /* Stats cards */
+    .stats-card {
         text-align: center;
-        max-width: 400px;
+        padding: 12px 5px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        height: 100%;
     }
-
-    .empty-icon-wrapper {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, rgba(65, 88, 208, 0.1), rgba(200, 80, 192, 0.1));
+    .stats-icon { font-size: 1.5rem; margin-bottom: 5px; }
+    .stats-content h4 { margin: 0; font-size: 1.3rem; }
+    .stats-content p { margin: 0; font-size: 0.7rem; color: #666; }
+    
+    /* Square course cards */
+    .course-card {
+        border: none;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+    .course-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    
+    .course-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 10px 5px;
+    }
+    .course-badge {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        max-width: 70%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .btn-xs { padding: 2px 6px; font-size: 0.7rem; }
+    
+    .course-body { padding: 0 10px 10px; flex-grow: 1; }
+    .course-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        min-height: 2.5rem;
+        line-height: 1.3;
+    }
+    .course-meta {
+        font-size: 0.7rem;
+        background: #f8f9fa;
+        padding: 8px;
+        border-radius: 8px;
+    }
+    .course-meta div {
+        margin-bottom: 5px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        margin: 0 auto 1.5rem;
-        font-size: 2.5rem;
-        color: var(--primary);
+        gap: 5px;
     }
-
-    .empty-title {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin-bottom: 0.75rem;
+    .course-meta i {
+        width: 14px;
+        color: #667eea;
     }
-
-    .empty-description {
-        color: var(--gray-600);
-        margin-bottom: 1.5rem;
-        font-size: 1rem;
+    
+    .course-footer {
+        padding: 0 10px 10px;
+        margin-top: auto;
     }
-
-    .btn-explore {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.75rem 2rem;
-        background: var(--primary-gradient);
-        color: white;
-        text-decoration: none;
-        border-radius: 40px;
-        font-weight: 600;
-        font-size: 1rem;
-        transition: all 0.3s;
-        box-shadow: 0 10px 20px -5px rgba(65, 88, 208, 0.4);
-    }
-
-    .btn-explore:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 15px 25px -5px rgba(65, 88, 208, 0.5);
-        color: white;
-    }
-
+    
     /* Grid spacing */
-    .g-4 { --bs-gutter-y: 1.5rem; --bs-gutter-x: 1.5rem; }
+    .g-2 { --bs-gutter-y: 0.5rem; --bs-gutter-x: 0.5rem; }
     .row > * { padding-right: calc(var(--bs-gutter-x) * .5); padding-left: calc(var(--bs-gutter-x) * .5); }
     
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-        .stat-card {
-            padding: 1rem;
-        }
-        
-        .stat-icon-wrapper {
-            width: 40px;
-            height: 40px;
-            font-size: 1.25rem;
-        }
-        
-        .stat-value {
-            font-size: 1.5rem;
-        }
-        
-        .small-value {
-            font-size: 1rem;
-        }
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 2px dashed #dee2e6;
     }
+    
+    /* Utilities */
+    .small { font-size: 0.85rem; }
+    .text-muted { color: #6c757d; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    .w-100 { width: 100%; }
 </style>
 {% endblock %}
