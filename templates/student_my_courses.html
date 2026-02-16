@@ -77,6 +77,20 @@
         </div>
     </div>
 
+    <!-- DEBUG: Add this temporarily to see the data structure -->
+    <div class="alert alert-info mb-4">
+        <h4>🔍 Debug Info - First Course Data Structure:</h4>
+        <button class="btn btn-sm btn-primary" type="button" data-toggle="collapse" data-target="#debugData" aria-expanded="false" aria-controls="debugData">
+            Toggle Debug View
+        </button>
+        <div class="collapse mt-3" id="debugData">
+            <div class="card card-body bg-dark text-white">
+                <pre style="color: #fff; background: #333; padding: 15px; border-radius: 5px; overflow-x: auto;">{{ registered_courses[0] | tojson(indent=2) if registered_courses else 'No courses found' }}</pre>
+            </div>
+            <p class="mt-2"><strong>Total courses:</strong> {{ registered_courses|length }}</p>
+        </div>
+    </div>
+
     <!-- Courses Grid -->
     {% if registered_courses %}
     <div class="row">
@@ -89,8 +103,14 @@
                         <span>
                             {% if reg.course and reg.course.course_code %}
                                 {{ reg.course.course_code }}
-                            {% else %}
+                            {% elif reg.course_code %}
                                 {{ reg.course_code }}
+                            {% elif reg.course and reg.course.code %}
+                                {{ reg.course.code }}
+                            {% elif reg.code %}
+                                {{ reg.code }}
+                            {% else %}
+                                N/A
                             {% endif %}
                         </span>
                     </div>
@@ -110,8 +130,18 @@
                         <i class="fas fa-book mr-2"></i>
                         {% if reg.course and reg.course.course_title %}
                             {{ reg.course.course_title }}
-                        {% else %}
+                        {% elif reg.course_title %}
                             {{ reg.course_title }}
+                        {% elif reg.course and reg.course.title %}
+                            {{ reg.course.title }}
+                        {% elif reg.title %}
+                            {{ reg.title }}
+                        {% elif reg.course and reg.course.name %}
+                            {{ reg.course.name }}
+                        {% elif reg.name %}
+                            {{ reg.name }}
+                        {% else %}
+                            <span class="text-danger">Course name not available</span>
                         {% endif %}
                     </h4>
                     
@@ -123,8 +153,10 @@
                                 <span class="detail-value">
                                     {% if reg.course and reg.course.academic_year %}
                                         {{ reg.course.academic_year }}
-                                    {% else %}
+                                    {% elif reg.academic_year %}
                                         {{ reg.academic_year }}
+                                    {% else %}
+                                        N/A
                                     {% endif %}
                                 </span>
                             </div>
@@ -138,8 +170,10 @@
                                     Semester 
                                     {% if reg.course and reg.course.semester %}
                                         {{ reg.course.semester }}
-                                    {% else %}
+                                    {% elif reg.semester %}
                                         {{ reg.semester }}
+                                    {% else %}
+                                        N/A
                                     {% endif %}
                                 </span>
                             </div>
@@ -153,6 +187,10 @@
                                     {% set lecturer = reg.course.lecturers if reg.course and reg.course.lecturers else reg.lecturers %}
                                     {% if lecturer and lecturer.users %}
                                         {{ lecturer.users.full_name }}
+                                    {% elif lecturer and lecturer.full_name %}
+                                        {{ lecturer.full_name }}
+                                    {% elif lecturer and lecturer.name %}
+                                        {{ lecturer.name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
@@ -180,7 +218,7 @@
                     <a href="/student/scan" class="btn btn-success btn-block mb-2">
                         <i class="fas fa-qrcode"></i> Scan Attendance
                     </a>
-                    <a href="/student/attendance?course={{ reg.course.id if reg.course else reg.id }}" class="btn btn-info btn-block">
+                    <a href="/student/attendance?course={{ reg.course.id if reg.course and reg.course.id else reg.id }}" class="btn btn-info btn-block">
                         <i class="fas fa-chart-bar"></i> View History
                     </a>
                 </div>
@@ -398,6 +436,18 @@
     .text-warning { color: #ffa726 !important; }
     .text-info { color: #29b6f6 !important; }
     .text-muted { color: #6c757d !important; }
+    
+    /* Debug styles */
+    .bg-dark {
+        background-color: #1e1e1e !important;
+    }
+    .text-white {
+        color: #fff !important;
+    }
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
 </style>
 
 <script>
