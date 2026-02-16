@@ -1743,26 +1743,28 @@ def student_my_courses():
     
     student_id = session["user_id"]
     
-    # Get all registered courses with details
+    # Get all registered courses with details – use explicit foreign key
     registered_courses = (
         supabase
         .table("course_registration")
-        .select(
-            """
+        .select("""
             id,
             registered_at,
-            courses(
+            course_id,
+            courses!course_registration_course_id_fkey (
                 id,
                 course_code,
                 course_title,
                 academic_year,
                 semester,
-                lecturers(
-                    users(full_name, profile_photo_url)
+                lecturers (
+                    users (
+                        full_name,
+                        profile_photo_url
+                    )
                 )
             )
-            """
-        )
+        """)
         .eq("student_id", student_id)
         .order("registered_at", desc=True)
         .execute()
@@ -1773,7 +1775,6 @@ def student_my_courses():
         "student_my_courses.html",
         registered_courses=registered_courses
     )
-
 # Add this route for deleting a registered course
 @app.route("/student/unregister-course/<registration_id>", methods=["POST"])
 def unregister_course(registration_id):

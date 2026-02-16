@@ -6,13 +6,11 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- Stats Cards (slightly smaller) -->
+    <!-- Stats Cards -->
     <div class="row mb-4">
         <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
-                <div class="stats-icon">
-                    <i class="fas fa-book-open text-primary"></i>
-                </div>
+                <div class="stats-icon"><i class="fas fa-book-open text-primary"></i></div>
                 <div class="stats-content">
                     <h4>{{ registered_courses|length }}</h4>
                     <p>Total Courses</p>
@@ -21,14 +19,13 @@
         </div>
         <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
-                <div class="stats-icon">
-                    <i class="fas fa-calendar-alt text-success"></i>
-                </div>
+                <div class="stats-icon"><i class="fas fa-calendar-alt text-success"></i></div>
                 <div class="stats-content">
                     <h4>
                         {% set current_year_courses = [] %}
                         {% for reg in registered_courses %}
-                            {% if (reg.courses and reg.courses.academic_year == '2024/2025') or (reg.course and reg.course.academic_year == '2024/2025') %}
+                            {% set course = reg.courses or reg.course %}
+                            {% if course and course.academic_year == '2024/2025' %}
                                 {% set _ = current_year_courses.append(reg) %}
                             {% endif %}
                         {% endfor %}
@@ -40,16 +37,14 @@
         </div>
         <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
-                <div class="stats-icon">
-                    <i class="fas fa-user-graduate text-warning"></i>
-                </div>
+                <div class="stats-icon"><i class="fas fa-user-graduate text-warning"></i></div>
                 <div class="stats-content">
                     <h4>
                         {% set unique_lecturers = [] %}
                         {% for reg in registered_courses %}
-                            {% set lecturer = reg.courses.lecturers if reg.courses and reg.courses.lecturers else (reg.course.lecturers if reg.course and reg.course.lecturers else None) %}
-                            {% if lecturer and lecturer.users %}
-                                {% set lecturer_name = lecturer.users.full_name %}
+                            {% set course = reg.courses or reg.course %}
+                            {% if course and course.lecturers and course.lecturers.users %}
+                                {% set lecturer_name = course.lecturers.users.full_name %}
                                 {% if lecturer_name not in unique_lecturers %}
                                     {% set _ = unique_lecturers.append(lecturer_name) %}
                                 {% endif %}
@@ -63,21 +58,13 @@
         </div>
         <div class="col-md-3 col-6 mb-3">
             <div class="card stats-card">
-                <div class="stats-icon">
-                    <i class="fas fa-clock text-info"></i>
-                </div>
+                <div class="stats-icon"><i class="fas fa-clock text-info"></i></div>
                 <div class="stats-content">
                     <h4>
                         {% if registered_courses %}
                             {% set first_reg = registered_courses|sort(attribute='registered_at')|first %}
-                            {% if first_reg and first_reg.registered_at %}
-                                {{ first_reg.registered_at|datetimeformat }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        {% else %}
-                            N/A
-                        {% endif %}
+                            {{ first_reg.registered_at|datetimeformat if first_reg and first_reg.registered_at else 'N/A' }}
+                        {% else %}N/A{% endif %}
                     </h4>
                     <p>First Registration</p>
                 </div>
@@ -85,120 +72,90 @@
         </div>
     </div>
 
-    <!-- Hidden debug info (you can remove later) -->
-    <div style="display: none;" id="debug-data">{{ registered_courses|tojson }}</div>
+    <!-- 🔍 DEBUG INFO – REMOVE AFTER FIX -->
+    <div class="alert alert-info mb-4">
+        <strong>Debug: First registration raw data</strong>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-toggle="collapse" data-target="#debugCollapse">
+            Toggle
+        </button>
+        <div class="collapse mt-2" id="debugCollapse">
+            <pre class="bg-dark text-white p-3 rounded" style="max-height: 300px; overflow: auto;">{{ registered_courses[0] | tojson(indent=2) if registered_courses else 'No courses' }}</pre>
+            <p class="mt-1"><strong>Total courses:</strong> {{ registered_courses|length }}</p>
+        </div>
+    </div>
 
-    <!-- Courses Grid – smaller tiles -->
+    <!-- Courses Grid – square cards -->
     {% if registered_courses %}
-    <div class="row">
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
         {% for reg in registered_courses %}
-        <div class="col-xl-3 col-lg-4 col-md-6 mb-3">
-            <div class="card course-card">
+        {% set course = reg.courses or reg.course %}
+        <div class="col">
+            <div class="card course-card h-100">
                 <div class="course-card-header">
-                    <div class="course-code">
+                    <span class="course-code">
                         <i class="fas fa-hashtag"></i>
-                        <span>
-                            {% if reg.courses and reg.courses.course_code %}
-                                {{ reg.courses.course_code }}
-                            {% elif reg.course and reg.course.course_code %}
-                                {{ reg.course.course_code }}
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="course-actions">
-                        <form method="post" 
-                              action="/student/unregister-course/{{ reg.id }}" 
-                              onsubmit="return confirmUnregister('{{ reg.courses.course_code if reg.courses and reg.courses.course_code else (reg.course.course_code if reg.course and reg.course.course_code else 'this course') }}')">
-                            <button type="submit" class="btn btn-danger btn-sm">
-                                <i class="fas fa-trash-alt"></i> Remove
-                            </button>
-                        </form>
-                    </div>
+                        {{ course.course_code if course else 'N/A' }}
+                    </span>
+                    <form method="post" action="/student/unregister-course/{{ reg.id }}"
+                          onsubmit="return confirmUnregister('{{ course.course_code if course else 'this course' }}')">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
                 </div>
-                
-                <div class="course-card-body">
-                    <h5 class="course-title">
+                <div class="card-body d-flex flex-column">
+                    <h6 class="course-title">
                         <i class="fas fa-book mr-2"></i>
-                        {% if reg.courses and reg.courses.course_title %}
-                            {{ reg.courses.course_title }}
-                        {% elif reg.course and reg.course.course_title %}
-                            {{ reg.course.course_title }}
+                        {% if course and course.course_title %}
+                            {{ course.course_title }}
                         {% else %}
                             <span class="text-danger">Not available</span>
                         {% endif %}
-                    </h5>
-                    
-                    <div class="course-details">
+                    </h6>
+                    <div class="course-details mt-2">
                         <div class="detail-item">
                             <i class="fas fa-calendar"></i>
-                            <div class="detail-content">
+                            <div>
                                 <span class="detail-label">Year</span>
-                                <span class="detail-value">
-                                    {% if reg.courses and reg.courses.academic_year %}
-                                        {{ reg.courses.academic_year }}
-                                    {% elif reg.course and reg.course.academic_year %}
-                                        {{ reg.course.academic_year }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </span>
+                                <span class="detail-value">{{ course.academic_year if course else 'N/A' }}</span>
                             </div>
                         </div>
-                        
                         <div class="detail-item">
                             <i class="fas fa-layer-group"></i>
-                            <div class="detail-content">
+                            <div>
                                 <span class="detail-label">Semester</span>
-                                <span class="detail-value">
-                                    {% if reg.courses and reg.courses.semester %}
-                                        Sem {{ reg.courses.semester }}
-                                    {% elif reg.course and reg.course.semester %}
-                                        Sem {{ reg.course.semester }}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </span>
+                                <span class="detail-value">Sem {{ course.semester if course else 'N/A' }}</span>
                             </div>
                         </div>
-                        
                         <div class="detail-item">
                             <i class="fas fa-chalkboard-teacher"></i>
-                            <div class="detail-content">
+                            <div>
                                 <span class="detail-label">Lecturer</span>
                                 <span class="detail-value">
-                                    {% set lecturer = reg.courses.lecturers if reg.courses and reg.courses.lecturers else (reg.course.lecturers if reg.course and reg.course.lecturers else None) %}
-                                    {% if lecturer and lecturer.users %}
-                                        {{ lecturer.users.full_name }}
+                                    {% if course and course.lecturers and course.lecturers.users %}
+                                        {{ course.lecturers.users.full_name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
                                 </span>
                             </div>
                         </div>
-                        
                         <div class="detail-item">
                             <i class="fas fa-calendar-check"></i>
-                            <div class="detail-content">
+                            <div>
                                 <span class="detail-label">Registered</span>
                                 <span class="detail-value registered-date">
-                                    {% if reg.registered_at %}
-                                        {{ reg.registered_at|datetimeformat('medium') }}
-                                    {% else %}
-                                        Unknown
-                                    {% endif %}
+                                    {{ reg.registered_at|datetimeformat('medium') if reg.registered_at else 'Unknown' }}
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="course-card-footer">
-                    <a href="/student/scan" class="btn btn-success btn-sm btn-block mb-1">
+                <div class="card-footer bg-transparent border-top-0 pb-3">
+                    <a href="/student/scan" class="btn btn-success btn-sm w-100 mb-1">
                         <i class="fas fa-qrcode"></i> Scan
                     </a>
-                    <a href="/student/attendance?course={{ reg.courses.id if reg.courses else (reg.course.id if reg.course else reg.course_id) }}" class="btn btn-info btn-sm btn-block">
+                    <a href="/student/attendance?course={{ course.id if course else reg.course_id }}" class="btn btn-info btn-sm w-100">
                         <i class="fas fa-chart-bar"></i> History
                     </a>
                 </div>
@@ -210,9 +167,7 @@
     <!-- Empty State -->
     <div class="card empty-state-card">
         <div class="empty-state-content">
-            <div class="empty-state-icon">
-                <i class="fas fa-book-open fa-4x"></i>
-            </div>
+            <div class="empty-state-icon"><i class="fas fa-book-open fa-4x"></i></div>
             <h4>No Courses Registered</h4>
             <p class="text-muted">You haven't registered for any courses yet.</p>
             <div class="empty-state-actions">
@@ -231,7 +186,7 @@
 <style>
     .container-fluid { padding: 0; }
     
-    /* Smaller stats cards */
+    /* Stats cards */
     .stats-card {
         text-align: center;
         padding: 15px 10px;
@@ -245,7 +200,7 @@
     .stats-content h4 { margin: 0; font-size: 1.5rem; color: #333; }
     .stats-content p { margin: 3px 0 0; color: #666; font-size: 0.8rem; }
     
-    /* Smaller course cards */
+    /* Square course cards */
     .course-card {
         border: none;
         box-shadow: 0 3px 10px rgba(0,0,0,0.05);
@@ -253,6 +208,8 @@
         height: 100%;
         display: flex;
         flex-direction: column;
+        border-radius: 12px;
+        overflow: hidden;
     }
     .course-card:hover {
         transform: translateY(-4px);
@@ -263,7 +220,6 @@
         justify-content: space-between;
         align-items: center;
         padding: 12px 12px 0;
-        margin-bottom: 8px;
     }
     .course-code {
         display: inline-flex;
@@ -272,30 +228,29 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         padding: 4px 10px;
-        border-radius: 15px;
+        border-radius: 20px;
         font-weight: 600;
         font-size: 0.75rem;
     }
-    .course-card-body { padding: 0 12px; flex-grow: 1; }
     .course-title {
         font-size: 1rem;
         color: #333;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
+        margin-bottom: 8px;
         font-weight: 600;
         line-height: 1.3;
         min-height: 2.6rem;
+        display: flex;
+        align-items: center;
     }
     .course-details {
         background: #f8f9fa;
         padding: 10px;
         border-radius: 8px;
-        margin-bottom: 12px;
+        font-size: 0.85rem;
     }
     .detail-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: 8px;
         padding-bottom: 8px;
         border-bottom: 1px solid #eaeaea;
@@ -309,8 +264,8 @@
         width: 20px;
         color: #667eea;
         font-size: 0.9rem;
+        margin-top: 2px;
     }
-    .detail-content { flex: 1; }
     .detail-label {
         display: block;
         color: #666;
@@ -322,15 +277,18 @@
         color: #333;
         font-weight: 600;
         font-size: 0.8rem;
-        line-height: 1.2;
     }
-    .course-card-footer {
-        padding: 12px;
-        border-top: 1px solid #eaeaea;
-        margin-top: auto;
+    .card-footer {
+        background: transparent;
+        border-top: none;
+        padding-top: 0;
     }
     .btn-sm { padding: 4px 8px; font-size: 0.75rem; }
-    .btn-block { width: 100%; margin-bottom: 5px; }
+    .w-100 { width: 100%; }
+    .mb-1 { margin-bottom: 0.25rem; }
+    
+    /* Grid spacing */
+    .g-3 { --bs-gutter-y: 1rem; --bs-gutter-x: 1rem; }
     
     /* Empty state */
     .empty-state-card {
@@ -342,10 +300,9 @@
     .empty-state-icon { color: #adb5bd; margin-bottom: 20px; }
     .empty-state-actions { margin-top: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     
-    /* Utility */
-    .mb-3 { margin-bottom: 1rem; }
-    .text-muted { color: #6c757d !important; }
-    .text-danger { color: #dc3545 !important; }
+    /* Debug */
+    .bg-dark { background-color: #1e1e1e; }
+    .text-white { color: #fff; }
 </style>
 
 <script>
