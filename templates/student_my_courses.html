@@ -39,8 +39,9 @@
                     <h3>
                         {% set unique_lecturers = [] %}
                         {% for reg in registered_courses %}
-                            {% if reg.lecturers and reg.lecturers.users %}
-                                {% set lecturer_name = reg.lecturers.users.full_name %}
+                            {% set lecturer = reg.course.lecturers if reg.course and reg.course.lecturers else reg.lecturers %}
+                            {% if lecturer and lecturer.users %}
+                                {% set lecturer_name = lecturer.users.full_name %}
                                 {% if lecturer_name not in unique_lecturers %}
                                     {% set _ = unique_lecturers.append(lecturer_name) %}
                                 {% endif %}
@@ -60,7 +61,12 @@
                 <div class="stats-content">
                     <h3>
                         {% if registered_courses %}
-                            {{ registered_courses|sort(attribute='registered_at')|first|attr('registered_at')|datetimeformat if registered_courses|sort(attribute='registered_at')|first|attr('registered_at') else 'N/A' }}
+                            {% set first_reg = registered_courses|sort(attribute='registered_at')|first %}
+                            {% if first_reg and first_reg.registered_at %}
+                                {{ first_reg.registered_at|datetimeformat }}
+                            {% else %}
+                                N/A
+                            {% endif %}
                         {% else %}
                             N/A
                         {% endif %}
@@ -80,12 +86,18 @@
                 <div class="course-card-header">
                     <div class="course-code">
                         <i class="fas fa-hashtag"></i>
-                        <span>{{ reg.course_code }}</span>
+                        <span>
+                            {% if reg.course and reg.course.course_code %}
+                                {{ reg.course.course_code }}
+                            {% else %}
+                                {{ reg.course_code }}
+                            {% endif %}
+                        </span>
                     </div>
                     <div class="course-actions">
                         <form method="post" 
                               action="/student/unregister-course/{{ reg.id }}" 
-                              onsubmit="return confirmUnregister('{{ reg.course_code }}')">
+                              onsubmit="return confirmUnregister('{{ reg.course.course_code if reg.course and reg.course.course_code else reg.course_code }}')">
                             <button type="submit" class="btn btn-danger btn-sm">
                                 <i class="fas fa-trash-alt"></i> Remove
                             </button>
@@ -96,7 +108,11 @@
                 <div class="course-card-body">
                     <h4 class="course-title">
                         <i class="fas fa-book mr-2"></i>
-                        {{ reg.course_title }}
+                        {% if reg.course and reg.course.course_title %}
+                            {{ reg.course.course_title }}
+                        {% else %}
+                            {{ reg.course_title }}
+                        {% endif %}
                     </h4>
                     
                     <div class="course-details">
@@ -104,7 +120,13 @@
                             <i class="fas fa-calendar"></i>
                             <div class="detail-content">
                                 <span class="detail-label">Academic Year</span>
-                                <span class="detail-value">{{ reg.academic_year }}</span>
+                                <span class="detail-value">
+                                    {% if reg.course and reg.course.academic_year %}
+                                        {{ reg.course.academic_year }}
+                                    {% else %}
+                                        {{ reg.academic_year }}
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                         
@@ -112,7 +134,14 @@
                             <i class="fas fa-layer-group"></i>
                             <div class="detail-content">
                                 <span class="detail-label">Semester</span>
-                                <span class="detail-value">Semester {{ reg.semester }}</span>
+                                <span class="detail-value">
+                                    Semester 
+                                    {% if reg.course and reg.course.semester %}
+                                        {{ reg.course.semester }}
+                                    {% else %}
+                                        {{ reg.semester }}
+                                    {% endif %}
+                                </span>
                             </div>
                         </div>
                         
@@ -121,8 +150,9 @@
                             <div class="detail-content">
                                 <span class="detail-label">Lecturer</span>
                                 <span class="detail-value">
-                                    {% if reg.lecturers and reg.lecturers.users %}
-                                        {{ reg.lecturers.users.full_name }}
+                                    {% set lecturer = reg.course.lecturers if reg.course and reg.course.lecturers else reg.lecturers %}
+                                    {% if lecturer and lecturer.users %}
+                                        {{ lecturer.users.full_name }}
                                     {% else %}
                                         <span class="text-muted">Not assigned</span>
                                     {% endif %}
@@ -150,7 +180,7 @@
                     <a href="/student/scan" class="btn btn-success btn-block mb-2">
                         <i class="fas fa-qrcode"></i> Scan Attendance
                     </a>
-                    <a href="/student/attendance?course={{ reg.id }}" class="btn btn-info btn-block">
+                    <a href="/student/attendance?course={{ reg.course.id if reg.course else reg.id }}" class="btn btn-info btn-block">
                         <i class="fas fa-chart-bar"></i> View History
                     </a>
                 </div>
@@ -179,8 +209,6 @@
     </div>
     {% endif %}
 </div>
-
-<!-- ... rest of the CSS and JS remains the same ... -->
 
 <style>
     .container-fluid {
