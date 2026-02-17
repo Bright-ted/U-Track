@@ -19,60 +19,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon-wrapper bg-success-soft">
-                    <i class="fas fa-calendar-alt text-success"></i>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-label">Current Year</span>
-                    <h3 class="stat-value">
-                        {% set count = 0 %}
-                        {% for reg in registered_courses %}
-                            {% if reg.course and reg.course.academic_year == '2025/2026' %}
-                                {% set count = count + 1 %}
-                            {% endif %}
-                        {% endfor %}
-                        {{ count }}
-                    </h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon-wrapper bg-warning-soft">
-                    <i class="fas fa-user-graduate text-warning"></i>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-label">Lecturers</span>
-                    <h3 class="stat-value">
-                        {% set lecturers = [] %}
-                        {% for reg in registered_courses %}
-                            {% if reg.course and reg.course.lecturers and reg.course.lecturers.users and reg.course.lecturers.users.full_name not in lecturers %}
-                                {% set _ = lecturers.append(reg.course.lecturers.users.full_name) %}
-                            {% endif %}
-                        {% endfor %}
-                        {{ lecturers|length }}
-                    </h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon-wrapper bg-info-soft">
-                    <i class="fas fa-clock text-info"></i>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-label">First Registration</span>
-                    <h3 class="stat-value small-value">
-                        {% if registered_courses %}
-                            {% set first = registered_courses|sort(attribute='registered_at')|first %}
-                            {{ first.registered_at|datetimeformat('date') if first.registered_at else 'N/A' }}
-                        {% else %}N/A{% endif %}
-                    </h3>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Course Grid - Modern card design -->
@@ -124,21 +70,7 @@
                             </div>
                         </div>
                         
-                        <div class="detail-item">
-                            <div class="detail-icon">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                            </div>
-                            <div class="detail-text">
-                                <span class="detail-label">Lecturer</span>
-                                <span class="detail-value">
-                                    {% if course and course.lecturers and course.lecturers.users %}
-                                        {{ course.lecturers.users.full_name }}
-                                    {% else %}
-                                        <span class="text-muted">Not assigned</span>
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
+                        
                         
                         <div class="detail-item">
                             <div class="detail-icon">
